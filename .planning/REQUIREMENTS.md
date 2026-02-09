@@ -164,15 +164,97 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INPUT-01 | Phase 1 | Pending |
-| INPUT-02 | Phase 1 | Pending |
-| ... | ... | ... |
+| INPUT-01 | Phase 2 | Pending |
+| INPUT-02 | Phase 6 | Pending |
+| INPUT-03 | Phase 6 | Pending |
+| INPUT-04 | Phase 7 | Pending |
+| INPUT-05 | Phase 8 | Pending |
+| INPUT-06 | Phase 7 | Pending |
+| INPUT-07 | Phase 7 | Pending |
+| FEAT-01 | Phase 2 | Pending |
+| FEAT-02 | Phase 6 | Pending |
+| FEAT-03 | Phase 6 | Pending |
+| FEAT-04 | Phase 6 | Pending |
+| FEAT-05 | Phase 2 | Pending |
+| FEAT-06 | Phase 6 | Pending |
+| FEAT-07 | Phase 6 | Pending |
+| FEAT-08 | Phase 2 | Pending |
+| ML-01 | Phase 2 | Pending |
+| ML-02 | Phase 3 | Pending |
+| ML-03 | Phase 3 | Pending |
+| ML-04 | Phase 3 | Pending |
+| ML-05 | Phase 3 | Pending |
+| ML-06 | Phase 3 | Pending |
+| ML-07 | Phase 3 | Pending |
+| ML-08 | Phase 2 | Pending |
+| ENS-01 | Phase 3 | Pending |
+| ENS-02 | Phase 3 | Pending |
+| ENS-03 | Phase 3 | Pending |
+| ENS-04 | Phase 3 | Pending |
+| ENS-05 | Phase 3 | Pending |
+| GA-01 | Phase 4 | Pending |
+| GA-02 | Phase 4 | Pending |
+| GA-03 | Phase 4 | Pending |
+| GA-04 | Phase 4 | Pending |
+| GA-05 | Phase 4 | Pending |
+| GA-06 | Phase 4 | Pending |
+| RULE-01 | Phase 5 | Pending |
+| RULE-02 | Phase 5 | Pending |
+| RULE-03 | Phase 5 | Pending |
+| RULE-04 | Phase 5 | Pending |
+| RULE-05 | Phase 5 | Pending |
+| RULE-06 | Phase 5 | Pending |
+| RULE-07 | Phase 5 | Pending |
+| PROB-01 | Phase 5 | Pending |
+| PROB-02 | Phase 5 | Pending |
+| PROB-03 | Phase 5 | Pending |
+| PROB-04 | Phase 5 | Pending |
+| AGG-01 | Phase 5 | Pending |
+| AGG-02 | Phase 5 | Pending |
+| AGG-03 | Phase 5 | Pending |
+| AGG-04 | Phase 5 | Pending |
+| EXPL-01 | Phase 9 | Pending |
+| EXPL-02 | Phase 9 | Pending |
+| EXPL-03 | Phase 9 | Pending |
+| EXPL-04 | Phase 9 | Pending |
+| EXPL-05 | Phase 9 | Pending |
+| WEB-01 | Phase 8 | Pending |
+| WEB-02 | Phase 8 | Pending |
+| WEB-03 | Phase 8 | Pending |
+| WEB-04 | Phase 9 | Pending |
+| WEB-05 | Phase 3 | Pending |
+| WEB-06 | Phase 9 | Pending |
+| WEB-07 | Phase 8 | Pending |
+| WEB-08 | Phase 8 | Pending |
+| MODEL-01 | Phase 2 | Pending |
+| MODEL-02 | Phase 2 | Pending |
+| MODEL-03 | Phase 4 | Pending |
+| MODEL-04 | Phase 4 | Pending |
+| MODEL-05 | Phase 4 | Pending |
+| EVAL-01 | Phase 2 | Pending |
+| EVAL-02 | Phase 2 | Pending |
+| EVAL-03 | Phase 2 | Pending |
+| EVAL-04 | Phase 4 | Pending |
+| EVAL-05 | Phase 10 | Pending |
+| EVAL-06 | Phase 10 | Pending |
+| DOC-01 | Phase 1 | Pending |
+| DOC-02 | Phase 1 | Pending |
+| DOC-03 | Phase 10 | Pending |
+| DOC-04 | Phase 10 | Pending |
+| DOC-05 | Phase 10 | Pending |
+| DOC-06 | Phase 10 | Pending |
+| DOC-07 | Phase 10 | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 68 total
-- Mapped to phases: 0
-- Unmapped: 68 ⚠️
+- Mapped to phases: 68
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-09*
-*Last updated: 2026-02-09 after initial definition*
+*Last updated: 2026-02-09 after roadmap creation*
