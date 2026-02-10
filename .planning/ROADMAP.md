@@ -39,10 +39,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. System validates data quality and rejects malformed/mislabeled samples
   5. System caches extracted features for reuse across model training runs
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 01-01-PLAN.md — Project setup and dataset downloaders
+- [ ] 01-02-PLAN.md — Data validation and merger
+- [ ] 01-03-PLAN.md — Temporal split and class balancing
+- [ ] 01-04-PLAN.md — Pipeline orchestration and documentation
 
 ### Phase 2: Core ML Pipeline - URL Detection MVP
 **Goal**: Functional end-to-end URL phishing detector with single classifier (Random Forest), feature extraction, and REST API endpoint responding sub-second.
@@ -222,7 +225,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Data Pipeline | 0/TBD | Not started | - |
+| 1. Foundation & Data Pipeline | 0/4 | Planned | - |
 | 2. Core ML Pipeline - URL Detection MVP | 0/TBD | Not started | - |
 | 3. ML Ensemble Expansion | 0/TBD | Not started | - |
 | 4. Genetic Algorithm Optimization | 0/TBD | Not started | - |
@@ -235,4 +238,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 ---
 *Roadmap created: 2026-02-09*
-*Last updated: 2026-02-09*
+*Last updated: 2026-02-10*
