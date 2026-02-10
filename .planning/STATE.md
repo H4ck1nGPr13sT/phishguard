@@ -11,28 +11,29 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 2 of 10 (Core ML Pipeline - URL Detection MVP)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-10 — Phase 1 complete (Foundation & Data Pipeline)
+Plan: 1 of TBD in current phase
+Status: In progress
+Last activity: 2026-02-10 — Completed 02-01-PLAN.md (URL Feature Extraction)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 11%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 5 min
-- Total execution time: 0.35 hours
+- Total plans completed: 5
+- Average duration: 4.8 min
+- Total execution time: 0.40 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
+| 02-core-ml-pipeline-url-detection-mvp | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5 min), 01-02 (3 min), 01-03 (5 min), 01-04 (8 min)
-- Trend: Consistent execution velocity with slight increase for integration testing
+- Last 5 plans: 01-02 (3 min), 01-03 (5 min), 01-04 (8 min), 02-01 (3 min)
+- Trend: Consistent execution velocity, feature extraction faster than expected
 
 *Updated after each plan completion*
 
@@ -74,6 +75,12 @@ Recent decisions affecting current work:
 - SMOTE balancing uses numeric features only (metadata columns separated)
 - Integration tests run with UCI-only data (no API keys required for CI/CD)
 
+**From 02-01 (2026-02-10):**
+- tldextract for robust domain parsing (handles Public Suffix List edge cases like co.uk, github.io)
+- Suspicious TLD list: tk, ml, ga, cf, gq, xyz, pw, cc (commonly used in phishing)
+- Return default dict with zeros for empty/invalid URLs (prevents pipeline crashes)
+- 30 numeric features: 7 length, 10 character counts, 8 binary, 5 structure (including Shannon entropy)
+
 ### Pending Todos
 
 None yet.
@@ -94,7 +101,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Phase 1 complete, ready to plan Phase 2
+Stopped at: Completed 02-01-PLAN.md (URL Feature Extraction Module)
 Resume file: None
 
 ---
