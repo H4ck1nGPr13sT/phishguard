@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 1 of 10 (Foundation & Data Pipeline)
-Plan: 2 of TBD in current phase
+Plan: 3 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-10 — Completed 01-02-PLAN.md (Data validation and merger)
+Last activity: 2026-02-10 — Completed 01-03-PLAN.md (Temporal split & class balancing)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 3
 - Average duration: 4 min
-- Total execution time: 0.13 hours
+- Total execution time: 0.22 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-data-pipeline | 2 | 8 min | 4 min |
+| 01-foundation-data-pipeline | 3 | 13 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5 min), 01-02 (3 min)
-- Trend: Efficient execution
+- Last 5 plans: 01-01 (5 min), 01-02 (3 min), 01-03 (5 min)
+- Trend: Consistent execution velocity
 
 *Updated after each plan completion*
 
@@ -60,6 +60,13 @@ Recent decisions affecting current work:
 - Exact deduplication as default with fuzzy option
 - Preserve UCI ML feature columns in merged dataset
 
+**From 01-03 (2026-02-10):**
+- Temporal split enforces strict train < validation < test ordering to prevent data leakage
+- Samples without timestamps assigned conservatively to training set only
+- target_ratio parameter represents proportion of minority class (0.5 = 50/50 balanced)
+- Hybrid SMOTE + undersampling approach for robust balancing
+- Balancing applied ONLY to training data (never validation/test)
+
 ### Pending Todos
 
 None yet.
@@ -80,7 +87,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 01-02-PLAN.md (Data validation and merger)
+Stopped at: Completed 01-03-PLAN.md (Temporal split & class balancing)
 Resume file: None
 
 ---
