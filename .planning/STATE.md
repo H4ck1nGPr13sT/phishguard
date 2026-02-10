@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 1 of 10 (Foundation & Data Pipeline)
-Plan: 3 of TBD in current phase
+Plan: 4 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-10 — Completed 01-03-PLAN.md (Temporal split & class balancing)
+Last activity: 2026-02-10 — Completed 01-04-PLAN.md (Pipeline orchestration & documentation)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 4 min
-- Total execution time: 0.22 hours
+- Total plans completed: 4
+- Average duration: 5 min
+- Total execution time: 0.35 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-data-pipeline | 3 | 13 min | 4 min |
+| 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5 min), 01-02 (3 min), 01-03 (5 min)
-- Trend: Consistent execution velocity
+- Last 5 plans: 01-01 (5 min), 01-02 (3 min), 01-03 (5 min), 01-04 (8 min)
+- Trend: Consistent execution velocity with slight increase for integration testing
 
 *Updated after each plan completion*
 
@@ -67,6 +67,13 @@ Recent decisions affecting current work:
 - Hybrid SMOTE + undersampling approach for robust balancing
 - Balancing applied ONLY to training data (never validation/test)
 
+**From 01-04 (2026-02-10):**
+- Pipeline orchestrates 9 stages with comprehensive reporting for thesis documentation
+- Joblib caching (compression level 3) for reproducible experiments
+- Feature-only datasets skip URL deduplication to avoid false duplicates
+- SMOTE balancing uses numeric features only (metadata columns separated)
+- Integration tests run with UCI-only data (no API keys required for CI/CD)
+
 ### Pending Todos
 
 None yet.
@@ -87,7 +94,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 01-03-PLAN.md (Temporal split & class balancing)
+Stopped at: Completed 01-04-PLAN.md (Pipeline orchestration & documentation)
 Resume file: None
 
 ---
