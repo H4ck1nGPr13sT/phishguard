@@ -97,28 +97,22 @@ def download_uci_phishing(
                 except (AttributeError, IndexError):
                     pass  # Not a byte string column or empty
 
-        # Standardize label column
+        # Standardize Result column values (keep column name for merger)
         # UCI dataset uses 'Result' column with values -1 (legitimate) and 1 (phishing)
-        # Convert to 0/1 binary labels
-        if 'Result' in df.columns:
-            # Handle both string and numeric representations
-            result_col = df['Result'].astype(str).str.replace("b'", "").str.replace("'", "")
-            df['label'] = (result_col == '1').astype(int)
-            df = df.drop(columns=['Result'])
-        else:
+        # Convert from string/byte format to integers, but keep column name
+        if 'Result' not in df.columns:
             logger.warning("'Result' column not found in UCI dataset. Check dataset format.")
             # Try to infer label column
             if 'class' in df.columns:
-                class_col = df['class'].astype(str).str.replace("b'", "").str.replace("'", "")
-                df['label'] = (class_col == '1').astype(int)
+                df['Result'] = df['class']
                 df = df.drop(columns=['class'])
             else:
                 raise ValueError("Cannot find label column in UCI dataset")
 
-        # Add metadata columns
-        df['source'] = 'uci_ml'
-        df['timestamp'] = None  # UCI dataset has no timestamps
-        df['url'] = ''  # UCI dataset has features only, no raw URLs
+        # Normalize Result column to integers (-1 or 1)
+        # Handle both string and numeric representations
+        result_col = df['Result'].astype(str).str.replace("b'", "").str.replace("'", "")
+        df['Result'] = result_col.apply(lambda x: 1 if x == '1' else -1)
 
         # Cache processed data
         df.to_csv(cache_path, index=False)

@@ -33,8 +33,18 @@ def deduplicate_dataset(df: pd.DataFrame, method: str = 'exact') -> Tuple[pd.Dat
         >>> deduped, removed = deduplicate_dataset(df, method='exact')
         >>> print(f"Removed {removed} duplicates")
         Removed 1 duplicates
+
+    Note:
+        If all URLs are empty (e.g., UCI ML feature-only dataset), deduplication
+        is skipped to avoid treating all samples as duplicates.
     """
     original_count = len(df)
+
+    # Check if all URLs are empty (feature-only dataset like UCI ML)
+    non_empty_urls = df['url'].str.len() > 0
+    if not non_empty_urls.any():
+        logger.info("All URLs are empty (feature-only dataset). Skipping deduplication.")
+        return df, 0
 
     if method == 'fuzzy':
         # Normalize URLs for fuzzy matching

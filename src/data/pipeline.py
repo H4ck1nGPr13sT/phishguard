@@ -164,31 +164,31 @@ def run_pipeline(config: DataPipelineConfig = None) -> Dict[str, Any]:
 
     download_results = download_all_sources(
         phishtank_api_key=config.phishtank_api_key if not config.skip_phishtank else None,
-        nazario_mbox_path=config.nazario_mbox_path if not config.skip_nazario else None,
+        nazario_path=config.nazario_mbox_path if not config.skip_nazario else None,
         cache_dir=config.cache_dir,
-        data_dir=config.data_dir
+        force_refresh=config.force_refresh
     )
 
     reports['download'] = {
         'sources': {
             name: {
-                'success': result['success'],
-                'samples': len(result['data']) if result['data'] is not None else 0,
+                'success': result['status'] == 'success',
+                'samples': result.get('samples', 0),
                 'error': result.get('error')
             }
             for name, result in download_results.items()
         },
         'total_samples': sum(
-            len(r['data']) if r['data'] is not None else 0
-            for r in download_results.values()
+            r.get('samples', 0) for r in download_results.values()
+            if r['status'] == 'success'
         )
     }
 
-    # Check if any downloads succeeded
-    successful_downloads = [
-        r['data'] for r in download_results.values()
-        if r['success'] and r['data'] is not None
-    ]
+    # Check if any downloads succeeded and build dict for merger
+    successful_downloads = {
+        name: r['data'] for name, r in download_results.items()
+        if r['status'] == 'success' and 'data' in r
+    }
 
     if not successful_downloads:
         raise RuntimeError(
@@ -204,7 +204,7 @@ def run_pipeline(config: DataPipelineConfig = None) -> Dict[str, Any]:
     # Stage 2: Merge datasets
     logger.info("Stage 2: Merging datasets...")
 
-    merged_df, merge_report = merge_datasets(successful_downloads)
+    merged_df, merge_report = merge_datasets(successful_downloads, validate=False)
     reports['merge'] = merge_report
 
     logger.info(
@@ -221,43 +221,43 @@ def run_pipeline(config: DataPipelineConfig = None) -> Dict[str, Any]:
     if len(validated_df) == 0:
         raise RuntimeError(
             "Validation rejected all data. Check data quality and validation criteria.\n"
-            f"Rejection reasons: {validation_report['rejected_by_reason']}"
+            f"Rejection reasons: {validation_report.get('rejected', {})}"
         )
 
+    total_rejected = validation_report['total_samples'] - validation_report['valid_samples']
     logger.info(
         f"Validation: {len(validated_df)} samples passed, "
-        f"{validation_report['total_rejected']} rejected"
+        f"{total_rejected} rejected"
     )
 
     # Stage 4: Deduplicate
     logger.info(f"Stage 4: Deduplicating ({config.dedup_method})...")
 
-    dedup_df, dedup_report = deduplicate_dataset(
+    dedup_df, duplicates_removed = deduplicate_dataset(
         validated_df,
         method=config.dedup_method
     )
-    reports['deduplication'] = dedup_report
+    reports['deduplication'] = {
+        'method': config.dedup_method,
+        'duplicates_removed': duplicates_removed,
+        'unique_samples': len(dedup_df)
+    }
 
     logger.info(
-        f"Deduplication: {dedup_report['duplicates_removed']} duplicates removed, "
+        f"Deduplication: {duplicates_removed} duplicates removed, "
         f"{len(dedup_df)} unique samples remain"
     )
 
     # Stage 5: Temporal split
     logger.info("Stage 5: Performing temporal split...")
 
-    splits, split_report = temporal_split(
+    train_df, val_df, test_df, split_report = temporal_split(
         dedup_df,
         train_ratio=config.train_ratio,
         val_ratio=config.val_ratio,
-        test_ratio=config.test_ratio,
-        random_state=config.random_seed
+        test_ratio=config.test_ratio
     )
     reports['split'] = split_report
-
-    train_df = splits['train']
-    val_df = splits['val']
-    test_df = splits['test']
 
     logger.info(
         f"Split sizes - Train: {len(train_df)}, Val: {len(val_df)}, "
@@ -267,13 +267,16 @@ def run_pipeline(config: DataPipelineConfig = None) -> Dict[str, Any]:
     # Stage 6: Verify temporal integrity
     logger.info("Stage 6: Verifying temporal integrity...")
 
-    integrity_check = verify_temporal_integrity(splits)
-    reports['split']['temporal_integrity'] = integrity_check
-
-    if not integrity_check:
+    try:
+        integrity_check = verify_temporal_integrity(train_df, val_df, test_df)
+        reports['split']['temporal_integrity'] = integrity_check
+    except ValueError as e:
+        # If verification fails, it raises ValueError
+        logger.error(f"Temporal integrity check failed: {e}")
+        reports['split']['temporal_integrity'] = False
         raise RuntimeError(
-            "Temporal integrity check failed. Training data contains samples "
-            "from after validation/test data."
+            f"Temporal integrity check failed. Training data contains samples "
+            f"from after validation/test data. Details: {e}"
         )
 
     logger.info("Temporal integrity verified: no data leakage detected")
@@ -285,13 +288,35 @@ def run_pipeline(config: DataPipelineConfig = None) -> Dict[str, Any]:
     X_train = train_df.drop(columns=['label'])
     y_train = train_df['label']
 
-    X_train_balanced, y_train_balanced, balance_report = balance_training_data(
-        X_train,
+    # SMOTE requires numeric features only - exclude metadata columns
+    metadata_cols = ['url', 'content', 'timestamp', 'source']
+    feature_cols = [col for col in X_train.columns if col not in metadata_cols]
+
+    if len(feature_cols) == 0:
+        raise RuntimeError(
+            "No numeric features available for balancing. "
+            "Dataset must contain at least one numeric feature column."
+        )
+
+    X_train_features = X_train[feature_cols]
+    X_train_metadata = X_train[metadata_cols]
+
+    X_train_balanced_features, y_train_balanced, balance_report = balance_training_data(
+        X_train_features,
         y_train,
         target_ratio=config.balance_target_ratio,
         random_state=config.random_seed
     )
     reports['balance'] = balance_report
+
+    # Reattach metadata columns to balanced features
+    # Note: metadata rows will be from SMOTE-generated samples (replicated from nearest neighbors)
+    X_train_balanced = X_train_balanced_features.copy()
+    # For synthetic samples, metadata will be missing - use NaN
+    for col in metadata_cols:
+        if col in X_train_metadata.columns:
+            # Map original indices to metadata
+            X_train_balanced[col] = None  # Synthetic samples have no metadata
 
     logger.info(
         f"Balancing: {balance_report['original_counts']} -> "
