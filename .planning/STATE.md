@@ -11,29 +11,29 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 2 of 10 (Core ML Pipeline - URL Detection MVP)
-Plan: 3 of TBD in current phase
+Plan: 4 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-10 — Completed 02-03-PLAN.md (REST API for URL Phishing Detection)
+Last activity: 2026-02-10 — Completed 02-04-PLAN.md (Integration Testing & Dependencies)
 
-Progress: [██░░░░░░░░] 15%
+Progress: [██░░░░░░░░] 16%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 4.3 min
-- Total execution time: 0.50 hours
+- Total plans completed: 8
+- Average duration: 3.9 min
+- Total execution time: 0.52 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
-| 02-core-ml-pipeline-url-detection-mvp | 3 | 10 min | 3.3 min |
+| 02-core-ml-pipeline-url-detection-mvp | 4 | 12 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (8 min), 02-01 (3 min), 02-02 (4 min), 02-03 (3 min)
-- Trend: Excellent velocity, Phase 02 plans consistently fast (3-4 min avg)
+- Last 5 plans: 02-01 (3 min), 02-02 (4 min), 02-03 (3 min), 02-04 (2 min)
+- Trend: Excellent velocity, Phase 02 plans consistently fast (2-4 min avg)
 
 *Updated after each plan completion*
 
@@ -94,6 +94,12 @@ Recent decisions affecting current work:
 - Global ml_models dict provides singleton model access across endpoints
 - Pydantic v2 field_validator enforces URL format (http/https, 10-2048 chars)
 
+**From 02-04 (2026-02-10):**
+- 14 integration tests cover feature extraction, model persistence, API endpoints, and end-to-end flow
+- Latency benchmarking confirms <500ms API response and <50ms feature extraction (requirements met)
+- No WHOIS dependency added - research recommends skipping for latency reasons
+- Integration tests use real model and real URLs (not mocked) for true end-to-end validation
+
 ### Pending Todos
 
 None yet.
@@ -114,7 +120,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 02-03-PLAN.md (REST API for URL Phishing Detection)
+Stopped at: Completed 02-04-PLAN.md (Integration Testing & Dependencies)
 Resume file: None
 
 ---
