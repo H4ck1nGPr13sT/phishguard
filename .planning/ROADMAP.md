@@ -61,10 +61,14 @@ Plans:
   4. System responds within 500ms for single URL analysis
   5. System saves and loads trained models without retraining
 
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 02-01-PLAN.md — URL feature extraction pipeline (30+ features)
+- [ ] 02-02-PLAN.md — Model training and evaluation (Random Forest + metrics)
+- [ ] 02-03-PLAN.md — FastAPI REST API with /predict endpoint
+- [ ] 02-04-PLAN.md — Integration tests and dependency updates
+- [ ] 02-05-PLAN.md — Human verification of complete system
 
 ### Phase 3: ML Ensemble Expansion
 **Goal**: 7-classifier ensemble with soft/hard/stacking voting that exposes individual predictions and detects classifier disagreements via normalized entropy.
@@ -226,7 +230,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Data Pipeline | 4/4 | ✓ Complete | 2026-02-10 |
-| 2. Core ML Pipeline - URL Detection MVP | 0/TBD | Not started | - |
+| 2. Core ML Pipeline - URL Detection MVP | 0/5 | Planned | - |
 | 3. ML Ensemble Expansion | 0/TBD | Not started | - |
 | 4. Genetic Algorithm Optimization | 0/TBD | Not started | - |
 | 5. Alternative Detection Paradigms | 0/TBD | Not started | - |
