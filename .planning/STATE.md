@@ -11,29 +11,29 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 2 of 10 (Core ML Pipeline - URL Detection MVP)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-10 — Completed 02-01-PLAN.md (URL Feature Extraction)
+Last activity: 2026-02-10 — Completed 02-02-PLAN.md (Model Training Pipeline)
 
-Progress: [██░░░░░░░░] 11%
+Progress: [██░░░░░░░░] 13%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 4.8 min
-- Total execution time: 0.40 hours
+- Total plans completed: 6
+- Average duration: 4.7 min
+- Total execution time: 0.47 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
-| 02-core-ml-pipeline-url-detection-mvp | 1 | 3 min | 3 min |
+| 02-core-ml-pipeline-url-detection-mvp | 2 | 7 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (3 min), 01-03 (5 min), 01-04 (8 min), 02-01 (3 min)
-- Trend: Consistent execution velocity, feature extraction faster than expected
+- Last 5 plans: 01-03 (5 min), 01-04 (8 min), 02-01 (3 min), 02-02 (4 min)
+- Trend: Consistent velocity, ML training faster than expected (4 min for full train+test pipeline)
 
 *Updated after each plan completion*
 
@@ -81,6 +81,13 @@ Recent decisions affecting current work:
 - Return default dict with zeros for empty/invalid URLs (prevents pipeline crashes)
 - 30 numeric features: 7 length, 10 character counts, 8 binary, 5 structure (including Shannon entropy)
 
+**From 02-02 (2026-02-10):**
+- sklearn Pipeline pattern prevents data leakage from scaling test data (fit only on train)
+- OOB score validation when test set is empty (UCI ML dataset limitation)
+- joblib model persistence with protocol=5, compress=3 (90% size reduction)
+- class_weight='balanced' in RandomForestClassifier handles any data imbalance
+- Model achieves 96.14% OOB accuracy (exceeds 90% requirement)
+
 ### Pending Todos
 
 None yet.
@@ -101,7 +108,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 02-01-PLAN.md (URL Feature Extraction Module)
+Stopped at: Completed 02-02-PLAN.md (Model Training Pipeline with Random Forest)
 Resume file: None
 
 ---
