@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 1 of 10 (Foundation & Data Pipeline)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-10 — Completed 01-01-PLAN.md (Project structure and dataset downloaders)
+Last activity: 2026-02-10 — Completed 01-02-PLAN.md (Data validation and merger)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 5 min
-- Total execution time: 0.08 hours
+- Total plans completed: 2
+- Average duration: 4 min
+- Total execution time: 0.13 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-data-pipeline | 1 | 5 min | 5 min |
+| 01-foundation-data-pipeline | 2 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5 min)
-- Trend: Establishing baseline
+- Last 5 plans: 01-01 (5 min), 01-02 (3 min)
+- Trend: Efficient execution
 
 *Updated after each plan completion*
 
@@ -54,6 +54,12 @@ Recent decisions affecting current work:
 - Local cache fallback strategy for all downloaders
 - Extract all URLs from Nazario emails (not just first URL)
 
+**From 01-02 (2026-02-10):**
+- Lazy validation with Pandera to filter invalid rows instead of failing
+- Empty string for UCI ML URLs (feature-only dataset)
+- Exact deduplication as default with fuzzy option
+- Preserve UCI ML feature columns in merged dataset
+
 ### Pending Todos
 
 None yet.
@@ -74,7 +80,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 01-01-PLAN.md (Project structure and dataset downloaders)
+Stopped at: Completed 01-02-PLAN.md (Data validation and merger)
 Resume file: None
 
 ---
