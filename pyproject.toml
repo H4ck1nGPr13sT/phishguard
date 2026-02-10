@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phishguard"
+version = "0.1.0"
+description = "Multi-paradigm phishing detection system integrating classical ML, genetic algorithms, Bayesian networks, and computer vision"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "PhishGuard Team"}
+]
+
+dependencies = [
+    "pandas>=2.0",
+    "imbalanced-learn>=0.12",
+    "scikit-learn>=1.5",
+    "pandera>=0.18",
+    "python-dotenv>=1.0",
+    "requests>=2.31",
+    "tqdm>=4.66",
+    "joblib>=1.3",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
