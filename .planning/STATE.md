@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 3 of 10 (ML Ensemble Expansion)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 03-01-PLAN.md (Base Classifier Training)
+Last activity: 2026-02-11 — Completed 03-02-PLAN.md (Ensemble Aggregation)
 
-Progress: [██░░░░░░░░] 22%
+Progress: [██░░░░░░░░] 24%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 72 min
-- Total execution time: 12 hours 5 min
+- Total plans completed: 11
+- Average duration: 66 min
+- Total execution time: 12 hours 11 min
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [██░░░░░░░░] 22%
 |-------|-------|-------|----------|
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
-| 03-ml-ensemble-expansion | 1 | 5 min | 5 min |
+| 03-ml-ensemble-expansion | 2 | 11 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (3 min), 02-04 (2 min), 02-05 (11h 27min), 03-01 (5 min)
+- Last 5 plans: 02-04 (2 min), 02-05 (11h 27min), 03-01 (5 min), 03-02 (6 min)
 - Note: 02-05 duration includes human verification pause, actual automation time ~2 min
 
 *Updated after each plan completion*
@@ -116,6 +116,14 @@ Recent decisions affecting current work:
 - 5-fold CV for validation instead of train/val split (matches training data structure)
 - 7 classifiers trained with 89% average accuracy: RF (96.14% OOB), SVM (94.74%), MLP (96.29%), XGBoost (95.52%), LR (91.68%), NB (64.07%), DT (92.62%)
 
+**From 03-02 (2026-02-11):**
+- Soft voting averages predict_proba() from all 7 classifiers (97.47% accuracy)
+- Hard voting uses majority vote across predictions (97.14% accuracy)
+- Stacking uses LogisticRegression meta-model with cv=5 to prevent data leakage
+- get_individual_predictions() extracts phishing_probability, prediction, confidence for disagreement analysis
+- Ensemble models saved with metadata (model_type, created_at, n_estimators) for tracking
+- All 3 aggregation strategies exceed average individual classifier accuracy (89.15%)
+
 ### Pending Todos
 
 None yet.
@@ -136,9 +144,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 03-01-PLAN.md (Base Classifier Training)
+Stopped at: Completed 03-02-PLAN.md (Ensemble Aggregation)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-11 (after 03-01)*
+*Last updated: 2026-02-11 (after 03-02)*
