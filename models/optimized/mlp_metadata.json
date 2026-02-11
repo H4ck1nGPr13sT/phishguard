@@ -1,0 +1,11 @@
+{
+  "classifier_name": "mlp",
+  "hyperparameters": {
+    "hidden_layer_sizes": 50,
+    "alpha": 0.008059264119313504,
+    "learning_rate_init": 0.009688979633205367
+  },
+  "fitness": 0.9697435897435897,
+  "timestamp": "2026-02-11 23:40:39",
+  "model_type": "ga_optimized"
+}

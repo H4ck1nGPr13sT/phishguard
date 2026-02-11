@@ -1,12 +1,12 @@
 {
   "classifier_name": "rf",
   "hyperparameters": {
-    "n_estimators": 52,
-    "max_depth": 8,
+    "n_estimators": 165,
+    "max_depth": 28,
     "min_samples_split": 2,
     "min_samples_leaf": 1
   },
-  "fitness": 0.9707200929152148,
-  "timestamp": "2026-02-11 23:22:26",
+  "fitness": 0.9704699365674975,
+  "timestamp": "2026-02-11 23:38:15",
   "model_type": "ga_optimized"
 }

@@ -1,9 +1,9 @@
 {
   "classifier_name": "nb",
   "hyperparameters": {
-    "var_smoothing": 4.991189888597781e-11
+    "var_smoothing": 4.431845281370626e-11
   },
   "fitness": 0.9438326585695007,
-  "timestamp": "2026-02-11 23:25:50",
+  "timestamp": "2026-02-11 23:42:44",
   "model_type": "ga_optimized"
 }

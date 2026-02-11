@@ -135,6 +135,22 @@ def setup_toolbox(
     # alpha=0.5 allows offspring to be slightly outside parent range for exploration
     toolbox.register("mate", tools.cxBlend, alpha=0.5)
 
+    # Create bounds checking decorator to fix complex number issues
+    # Clips individuals to valid bounds after crossover/mutation
+    def checkBounds(min_vals, max_vals):
+        def decorator(func):
+            def wrapper(*args, **kargs):
+                offspring = func(*args, **kargs)
+                for child in offspring:
+                    for i in range(len(child)):
+                        # Ensure value is real and within bounds
+                        if isinstance(child[i], complex):
+                            child[i] = child[i].real
+                        child[i] = max(min_vals[i], min(max_vals[i], float(child[i])))
+                return offspring
+            return wrapper
+        return decorator
+
     # Register mutation operator
     # Use mutPolynomialBounded for mixed int/float parameters
     # eta=20.0 controls mutation spread (higher = more concentrated near original)
@@ -161,6 +177,10 @@ def setup_toolbox(
         eta=20.0,     # Mutation spread parameter
         indpb=0.2     # 20% chance to mutate each gene
     )
+
+    # Decorate mate and mutate with bounds checking
+    toolbox.decorate("mate", checkBounds(low_bounds, up_bounds))
+    toolbox.decorate("mutate", checkBounds(low_bounds, up_bounds))
 
     # Register selection operator
     toolbox.register("select", tools.selTournament, tournsize=3)

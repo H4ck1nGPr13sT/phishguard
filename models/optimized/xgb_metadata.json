@@ -1,0 +1,17 @@
+{
+  "classifier_name": "xgb",
+  "hyperparameters": {
+    "n_estimators": 62,
+    "max_depth": 4,
+    "learning_rate": 0.019886862840539424,
+    "subsample": 0.9324160780889599,
+    "colsample_bytree": 0.8345314047673271,
+    "gamma": 0.7856061136349224,
+    "min_child_weight": 2,
+    "reg_alpha": 0.36089375360374853,
+    "reg_lambda": 0.3478091524204252
+  },
+  "fitness": 0.9672149744753261,
+  "timestamp": "2026-02-11 23:41:07",
+  "model_type": "ga_optimized"
+}
