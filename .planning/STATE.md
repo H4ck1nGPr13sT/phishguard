@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 4 of 10 (Genetic Algorithm Optimization)
-Plan: 3 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 04-03-PLAN.md (Feature Selection Optimization)
+Last activity: 2026-02-11 — Completed 04-02-PLAN.md (GA Hyperparameter Optimization)
 
-Progress: [████████░░] 79%
+Progress: [███████░░░] 78%
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 15
-- Average duration: 53 min
-- Total execution time: 13 hours 16 min
+- Average duration: 56 min
+- Total execution time: 14 hours 4 min
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████░░] 79%
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
-| 04-genetic-algorithm-optimization | 2 | 7 min | 3.5 min |
+| 04-genetic-algorithm-optimization | 2 | 52 min | 26 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (5 min), 03-04 (53 min), 04-01 (4 min), 04-03 (3 min)
-- Note: 03-04 includes model retraining time for feature mismatch fix
+- Last 5 plans: 03-04 (53 min), 04-01 (4 min), 04-02 (48 min)
+- Note: 03-04 includes model retraining time, 04-02 includes full GA optimization (30 gen)
 
 *Updated after each plan completion*
 
@@ -155,6 +155,16 @@ Recent decisions affecting current work:
 - HallOfFame(maxsize=10) preserves elite individuals across generations
 - Log-scale sampling for C, gamma, alpha enables uniform exploration across orders of magnitude
 
+**From 04-02 (2026-02-11):**
+- MLflow tracking with single run per classifier, generation metrics via step parameter (simpler than nested runs)
+- cxBlend crossover works with any number of hyperparameters (including 1 for NB), alpha=0.5 for exploration
+- mutPolynomialBounded mutation handles mixed int/float/categorical parameters (vs. mutUniformInt)
+- Bounds checking decorator prevents out-of-range values and complex number errors in genetic operators
+- LR solver selection: saga for penalty='none', lbfgs for penalty='l2' (automatic compatibility handling)
+- 30 generations, population=50 balances exploration vs runtime (~15-90 seconds per classifier)
+- All 7 classifiers optimized: average +1.75% test F1 improvement (6 improved, 1 unchanged)
+- Small test set (50 samples) causes variance in test F1 scores, consider expanding for future phases
+
 **From 04-03 (2026-02-11):**
 - Binary representation (1=selected, 0=excluded) for GA feature selection
 - RF proxy classifier for fitness evaluation - fast and robust for feature selection across all classifiers
@@ -178,7 +188,7 @@ None yet.
 
 **Phase 3:** ✓ Complete - ensemble system with 7 classifiers + disagreement detection operational
 
-**Phase 4:** GA infrastructure complete (04-01). Feature selection complete (04-03) - 16 optimal features identified. Ready for hyperparameter optimization and ensemble weight tuning
+**Phase 4:** GA infrastructure complete (04-01). Hyperparameter optimization complete (04-02) - 7 classifiers optimized with +1.75% avg F1 improvement. Ready for feature selection (04-03) and ensemble weight tuning
 
 **Phase 5:** Research needed for Bayesian network structure and modern rule-based heuristics (2026 threat landscape)
 
@@ -187,7 +197,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 04-03-PLAN.md (Feature Selection Optimization)
+Stopped at: Completed 04-02-PLAN.md (GA Hyperparameter Optimization)
 Resume file: None
 
 ---
