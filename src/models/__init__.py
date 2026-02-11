@@ -7,6 +7,7 @@ detection data, evaluating model performance, and making predictions.
 from src.models.train import train_model, create_pipeline
 from src.models.evaluate import evaluate_model, print_evaluation_report
 from src.models.predict import load_model, predict_single, predict_batch
+from src.models.classifiers import create_classifiers, get_classifier, CLASSIFIER_CONFIGS
 
 __all__ = [
     'train_model',
@@ -15,5 +16,8 @@ __all__ = [
     'print_evaluation_report',
     'load_model',
     'predict_single',
-    'predict_batch'
+    'predict_batch',
+    'create_classifiers',
+    'get_classifier',
+    'CLASSIFIER_CONFIGS'
 ]

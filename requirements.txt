@@ -12,6 +12,9 @@ scikit-learn>=1.4.0
 tldextract>=5.1.0
 validators>=0.22.0
 
+# Phase 3 - Ensemble
+xgboost>=2.0.0
+
 # Phase 2 - FastAPI
 fastapi>=0.109.0
 uvicorn>=0.27.0
