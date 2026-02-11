@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 4 of 10 (Genetic Algorithm Optimization)
-Plan: 3 of 3 in current phase
+Plan: 5 of 5 in current phase
 Status: Phase complete
-Last activity: 2026-02-11 — Completed 04-04-PLAN.md (Ensemble Weight Optimization)
+Last activity: 2026-02-11 — Completed 04-05-PLAN.md (Model Versioning and Comparison)
 
-Progress: [████████░░] 89%
+Progress: [████████░░] 95%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: 51 min
-- Total execution time: 14 hours 30 min
+- Total plans completed: 18
+- Average duration: 48 min
+- Total execution time: 14 hours 35 min
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████░░] 89%
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
-| 04-genetic-algorithm-optimization | 4 | 1h 18min | 20 min |
+| 04-genetic-algorithm-optimization | 5 | 1h 23min | 17 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (4 min), 04-02 (48 min), 04-03 (23 min), 04-04 (3 min)
-- Note: 04-02 includes full GA optimization (30 gen), 04-04 quick weight tuning (5 gen)
+- Last 5 plans: 04-02 (48 min), 04-03 (23 min), 04-04 (3 min), 04-05 (5 min)
+- Note: 04-02 includes full GA optimization (30 gen), 04-05 model registry and comparison
 
 *Updated after each plan completion*
 
@@ -184,6 +184,15 @@ Recent decisions affecting current work:
 - GA downweighted RF to 0.015 despite typical strength - small dataset benefits more from SVM/MLP generalization
 - Weighted voting ensemble achieves F1=0.9654 vs F1=0.9602 equal-weight baseline
 
+**From 04-05 (2026-02-11):**
+- Model registry uses cache/active_models.json for version selection (simple, explicit, version-controllable)
+- get_active_model() defaults to ga_optimized with fallback to baseline for backward compatibility
+- API loads models from registry at startup, not hardcoded paths
+- Comparison framework shows +1.75% avg classifier improvement (MLP best at +4.55%)
+- Ensemble improvement: +1.96% F1 (soft voting → weighted voting)
+- All classifiers set to ga_optimized version (all show improvement >= 0)
+- MLflow Model Registry tracks all baseline and optimized versions with metrics
+
 ### Pending Todos
 
 None yet.
@@ -197,7 +206,7 @@ None yet.
 
 **Phase 3:** ✓ Complete - ensemble system with 7 classifiers + disagreement detection operational
 
-**Phase 4:** ✓ Complete - all three GA optimization objectives achieved: hyperparameter tuning (+1.75% avg F1), feature selection (16 optimal features, 46.7% reduction), ensemble weight optimization (+0.53% F1). Ready for Phase 5 Bayesian reasoning
+**Phase 4:** ✓ Complete - all GA optimization objectives achieved plus model versioning: hyperparameter tuning (+1.75% avg F1), feature selection (16 optimal features, 46.7% reduction), ensemble weight optimization (+1.96% F1 ensemble improvement), model registry with MLflow tracking. Ready for Phase 5 Bayesian reasoning
 
 **Phase 5:** Research needed for Bayesian network structure and modern rule-based heuristics (2026 threat landscape)
 
@@ -206,9 +215,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 04-04-PLAN.md (Ensemble Weight Optimization) - Phase 4 complete
+Stopped at: Completed 04-05-PLAN.md (Model Versioning and Comparison) - Phase 4 complete
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-11 (after 04-04)*
+*Last updated: 2026-02-11 (after 04-05)*
