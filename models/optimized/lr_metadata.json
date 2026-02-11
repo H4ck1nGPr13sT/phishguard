@@ -1,10 +1,10 @@
 {
   "classifier_name": "lr",
   "hyperparameters": {
-    "C": 7.91451531411561,
+    "C": 7.974174081913068,
     "penalty": "l2"
   },
   "fitness": 0.9748717948717948,
-  "timestamp": "2026-02-11 23:50:42",
+  "timestamp": "2026-02-11 23:52:42",
   "model_type": "ga_optimized"
 }

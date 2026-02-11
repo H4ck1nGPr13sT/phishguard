@@ -1,17 +1,17 @@
 {
   "classifier_name": "xgb",
   "hyperparameters": {
-    "n_estimators": 62,
-    "max_depth": 4,
-    "learning_rate": 0.019886862840539424,
-    "subsample": 0.9324160780889599,
-    "colsample_bytree": 0.8345314047673271,
-    "gamma": 0.7856061136349224,
+    "n_estimators": 175,
+    "max_depth": 7,
+    "learning_rate": 0.10809816986875599,
+    "subsample": 0.8669427525390629,
+    "colsample_bytree": 0.6655667032765976,
+    "gamma": 2.1384274997207786,
     "min_child_weight": 2,
-    "reg_alpha": 0.36089375360374853,
-    "reg_lambda": 0.3478091524204252
+    "reg_alpha": 0.48953086194095474,
+    "reg_lambda": 0.23435691542083936
   },
-  "fitness": 0.9672149744753261,
-  "timestamp": "2026-02-11 23:41:07",
+  "fitness": 0.9623369256948383,
+  "timestamp": "2026-02-11 23:54:00",
   "model_type": "ga_optimized"
 }
