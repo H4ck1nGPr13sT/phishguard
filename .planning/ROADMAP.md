@@ -13,7 +13,7 @@ PhishGuard delivers a multi-paradigm phishing detection system that integrates 7
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Data Pipeline** - Establish data acquisition, temporal validation, and quality controls ✓ 2026-02-10
-- [ ] **Phase 2: Core ML Pipeline - URL Detection MVP** - Single-classifier URL phishing detector with FastAPI endpoint
+- [x] **Phase 2: Core ML Pipeline - URL Detection MVP** - Single-classifier URL phishing detector with FastAPI endpoint ✓ 2026-02-11
 - [ ] **Phase 3: ML Ensemble Expansion** - 7-classifier ensemble with voting and disagreement detection
 - [ ] **Phase 4: Genetic Algorithm Optimization** - Hyperparameter tuning and model versioning
 - [ ] **Phase 5: Alternative Detection Paradigms** - Rule-based expert system and Bayesian probabilistic analysis
@@ -64,11 +64,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — URL feature extraction pipeline (30+ features)
-- [ ] 02-02-PLAN.md — Model training and evaluation (Random Forest + metrics)
-- [ ] 02-03-PLAN.md — FastAPI REST API with /predict endpoint
-- [ ] 02-04-PLAN.md — Integration tests and dependency updates
-- [ ] 02-05-PLAN.md — Human verification of complete system
+- [x] 02-01-PLAN.md — URL feature extraction pipeline (30+ features)
+- [x] 02-02-PLAN.md — Model training and evaluation (Random Forest + metrics)
+- [x] 02-03-PLAN.md — FastAPI REST API with /predict endpoint
+- [x] 02-04-PLAN.md — Integration tests and dependency updates
+- [x] 02-05-PLAN.md — Human verification of complete system
 
 ### Phase 3: ML Ensemble Expansion
 **Goal**: 7-classifier ensemble with soft/hard/stacking voting that exposes individual predictions and detects classifier disagreements via normalized entropy.
@@ -230,7 +230,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Data Pipeline | 4/4 | ✓ Complete | 2026-02-10 |
-| 2. Core ML Pipeline - URL Detection MVP | 0/5 | Planned | - |
+| 2. Core ML Pipeline - URL Detection MVP | 5/5 | ✓ Complete | 2026-02-11 |
 | 3. ML Ensemble Expansion | 0/TBD | Not started | - |
 | 4. Genetic Algorithm Optimization | 0/TBD | Not started | - |
 | 5. Alternative Detection Paradigms | 0/TBD | Not started | - |
@@ -242,4 +242,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 ---
 *Roadmap created: 2026-02-09*
-*Last updated: 2026-02-10*
+*Last updated: 2026-02-11*
