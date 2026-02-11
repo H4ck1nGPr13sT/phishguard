@@ -81,17 +81,23 @@ def load_model(path: Path, check_version: bool = True) -> Pipeline:
     # Load model data
     model_data = joblib.load(path)
 
-    # Version check
-    if check_version and 'sklearn_version' in model_data:
-        saved_version = model_data['sklearn_version']
-        current_version = sklearn.__version__
-        if saved_version != current_version:
-            logger.warning(
-                f"Model trained with sklearn {saved_version}, "
-                f"loading with {current_version}. Behavior may differ."
-            )
+    # Handle both dict format (with metadata) and direct Pipeline format
+    if isinstance(model_data, dict) and 'model' in model_data:
+        # Dict format with metadata
+        if check_version and 'sklearn_version' in model_data:
+            saved_version = model_data['sklearn_version']
+            current_version = sklearn.__version__
+            if saved_version != current_version:
+                logger.warning(
+                    f"Model trained with sklearn {saved_version}, "
+                    f"loading with {current_version}. Behavior may differ."
+                )
+        model = model_data['model']
+    else:
+        # Direct Pipeline format (from retraining script)
+        model = model_data
+        model_data = {'metadata': {}}  # Create empty metadata for compatibility
 
-    model = model_data['model']
     logger.info(f"Model loaded successfully: {type(model).__name__}")
 
     # Log metadata if available
