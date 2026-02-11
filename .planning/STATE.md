@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 3 of 10 (ML Ensemble Expansion)
-Plan: 2 of TBD in current phase
+Plan: 3 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 03-02-PLAN.md (Ensemble Aggregation)
+Last activity: 2026-02-11 — Completed 03-03-PLAN.md (Disagreement Detection & Ensemble API)
 
-Progress: [██░░░░░░░░] 24%
+Progress: [██░░░░░░░░] 26%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 66 min
-- Total execution time: 12 hours 11 min
+- Total plans completed: 12
+- Average duration: 61 min
+- Total execution time: 12 hours 16 min
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [██░░░░░░░░] 24%
 |-------|-------|-------|----------|
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
-| 03-ml-ensemble-expansion | 2 | 11 min | 6 min |
+| 03-ml-ensemble-expansion | 3 | 16 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-04 (2 min), 02-05 (11h 27min), 03-01 (5 min), 03-02 (6 min)
+- Last 5 plans: 02-05 (11h 27min), 03-01 (5 min), 03-02 (6 min), 03-03 (5 min)
 - Note: 02-05 duration includes human verification pause, actual automation time ~2 min
 
 *Updated after each plan completion*
@@ -124,6 +124,14 @@ Recent decisions affecting current work:
 - Ensemble models saved with metadata (model_type, created_at, n_estimators) for tracking
 - All 3 aggregation strategies exceed average individual classifier accuracy (89.15%)
 
+**From 03-03 (2026-02-11):**
+- Shannon entropy normalized by log2(n_classifiers) for disagreement detection (0-1 scale)
+- For 7 classifiers with 4-3 split, normalized entropy ~0.35 (not close to 1.0)
+- Default disagreement threshold 0.7 is high bar for binary classification scenarios
+- /predict/ensemble API endpoint returns all 7 individual predictions plus ensemble verdict
+- DisagreementInfo includes score, edge case flag, vote distribution, agreeing/dissenting classifier lists
+- Backward compatible ensemble loading - API works with RF only if ensemble models missing
+
 ### Pending Todos
 
 None yet.
@@ -144,9 +152,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 03-02-PLAN.md (Ensemble Aggregation)
+Stopped at: Completed 03-03-PLAN.md (Disagreement Detection & Ensemble API)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-11 (after 03-02)*
+*Last updated: 2026-02-11 (after 03-03)*
