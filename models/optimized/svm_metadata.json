@@ -1,0 +1,11 @@
+{
+  "classifier_name": "svm",
+  "hyperparameters": {
+    "C": 0.7696933919394423,
+    "gamma": 0.23685336157364797,
+    "kernel": "rbf"
+  },
+  "fitness": 0.9509639953542394,
+  "timestamp": "2026-02-11 23:26:12",
+  "model_type": "ga_optimized"
+}

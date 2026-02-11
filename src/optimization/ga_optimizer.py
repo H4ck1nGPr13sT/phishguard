@@ -131,30 +131,35 @@ def setup_toolbox(
     toolbox.register("evaluate", fitness_func)
 
     # Register genetic operators
-    toolbox.register("mate", tools.cxOnePoint)  # Single-point crossover
+    # Use cxBlend for float/continuous parameters (works with any number of genes, including 1)
+    # alpha=0.5 allows offspring to be slightly outside parent range for exploration
+    toolbox.register("mate", tools.cxBlend, alpha=0.5)
 
     # Register mutation operator
+    # Use mutPolynomialBounded for mixed int/float parameters
+    # eta=20.0 controls mutation spread (higher = more concentrated near original)
     # Build mutation bounds lists
     low_bounds = []
     up_bounds = []
 
     for param_name, param_spec in search_space.items():
         if param_spec['type'] == 'int':
-            low_bounds.append(param_spec['low'])
-            up_bounds.append(param_spec['high'])
+            low_bounds.append(float(param_spec['low']))
+            up_bounds.append(float(param_spec['high']))
         elif param_spec['type'] == 'float':
             low_bounds.append(param_spec['low'])
             up_bounds.append(param_spec['high'])
         elif param_spec['type'] == 'categorical':
-            low_bounds.append(0)
-            up_bounds.append(len(param_spec['choices']) - 1)
+            low_bounds.append(0.0)
+            up_bounds.append(float(len(param_spec['choices']) - 1))
 
     toolbox.register(
         "mutate",
-        tools.mutUniformInt,
+        tools.mutPolynomialBounded,
         low=low_bounds,
         up=up_bounds,
-        indpb=0.2  # 20% chance to mutate each gene
+        eta=20.0,     # Mutation spread parameter
+        indpb=0.2     # 20% chance to mutate each gene
     )
 
     # Register selection operator

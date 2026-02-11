@@ -89,7 +89,14 @@ def create_model_from_params(classifier_name: str, params: Dict[str, Any]) -> Pi
             'random_state': 42
         })
     elif classifier_name == 'lr':
+        # Handle solver based on penalty
+        if params.get('penalty') == 'none':
+            solver = 'saga'  # saga supports penalty='none'
+        else:
+            solver = 'lbfgs'  # lbfgs is default, faster for l2
+
         full_params.update({
+            'solver': solver,
             'class_weight': 'balanced',
             'max_iter': 1000,
             'random_state': 42,
