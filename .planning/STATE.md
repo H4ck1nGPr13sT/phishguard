@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 3 of 10 (ML Ensemble Expansion)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-11 — Phase 2 complete (Core ML Pipeline - URL Detection MVP)
+Plan: 1 of TBD in current phase
+Status: In progress
+Last activity: 2026-02-11 — Completed 03-01-PLAN.md (Base Classifier Training)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [██░░░░░░░░] 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 80 min
-- Total execution time: 12 hours
+- Total plans completed: 10
+- Average duration: 72 min
+- Total execution time: 12 hours 5 min
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [██░░░░░░░░] 20%
 |-------|-------|-------|----------|
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
+| 03-ml-ensemble-expansion | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (4 min), 02-03 (3 min), 02-04 (2 min), 02-05 (11h 27min)
+- Last 5 plans: 02-03 (3 min), 02-04 (2 min), 02-05 (11h 27min), 03-01 (5 min)
 - Note: 02-05 duration includes human verification pause, actual automation time ~2 min
 
 *Updated after each plan completion*
@@ -107,6 +108,14 @@ Recent decisions affecting current work:
 - URL validation working correctly (422 errors for invalid URLs)
 - Phase 2 MVP delivery complete: feature extraction → model → API → tests → human-verified
 
+**From 03-01 (2026-02-11):**
+- XGBoost serves as Gradient Boosting implementation (no separate sklearn GradientBoostingClassifier)
+- SVM configured with probability=True for soft voting in ensemble
+- XGBoost n_jobs=1 to prevent thread thrashing when sklearn uses n_jobs=-1
+- Naive Bayes kept despite 64% accuracy for ensemble diversity contribution
+- 5-fold CV for validation instead of train/val split (matches training data structure)
+- 7 classifiers trained with 89% average accuracy: RF (96.14% OOB), SVM (94.74%), MLP (96.29%), XGBoost (95.52%), LR (91.68%), NB (64.07%), DT (92.62%)
+
 ### Pending Todos
 
 None yet.
@@ -127,9 +136,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Phase 2 complete, ready to plan Phase 3
+Stopped at: Completed 03-01-PLAN.md (Base Classifier Training)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-11*
+*Last updated: 2026-02-11 (after 03-01)*
