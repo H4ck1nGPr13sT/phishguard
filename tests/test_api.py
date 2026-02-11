@@ -26,11 +26,41 @@ def mock_model():
 
 
 @pytest.fixture
+def mock_voting_ensemble():
+    """Create mock voting ensemble with individual classifiers."""
+    ensemble = MagicMock()
+    ensemble.predict_proba.return_value = np.array([[0.3, 0.7]])  # 70% phishing
+
+    # Mock named_estimators_ for get_individual_predictions
+    mock_estimators = {}
+    classifier_names = ['rf', 'svm', 'mlp', 'xgb', 'lr', 'nb', 'dt']
+    probabilities = [0.9, 0.85, 0.8, 0.75, 0.7, 0.3, 0.2]  # Varied predictions
+
+    for name, prob in zip(classifier_names, probabilities):
+        mock_est = MagicMock()
+        mock_est.predict_proba.return_value = np.array([[1 - prob, prob]])
+        mock_estimators[name] = mock_est
+
+    ensemble.named_estimators_ = mock_estimators
+    return ensemble
+
+
+@pytest.fixture
 def client(mock_model):
     """Create test client with mocked model."""
     from src.api.main import app, ml_models
 
     ml_models["phishing_detector"] = mock_model
+    return TestClient(app)
+
+
+@pytest.fixture
+def client_with_ensemble(mock_model, mock_voting_ensemble):
+    """Create test client with mocked ensemble models."""
+    from src.api.main import app, ml_models
+
+    ml_models["phishing_detector"] = mock_model
+    ml_models["voting_soft"] = mock_voting_ensemble
     return TestClient(app)
 
 
@@ -224,3 +254,122 @@ class TestOpenAPI:
         assert "paths" in schema
         assert "/predict" in schema["paths"]
         assert "/health" in schema["paths"]
+
+
+class TestEnsemblePredictEndpoint:
+    """Test ensemble prediction endpoint."""
+
+    def test_predict_ensemble_endpoint_exists(self, client_with_ensemble):
+        """Test POST /predict/ensemble returns 200."""
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        assert response.status_code == 200
+
+    def test_predict_ensemble_returns_all_classifiers(self, client_with_ensemble):
+        """Test response has 7 individual_predictions."""
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        data = response.json()
+        assert "individual_predictions" in data
+        assert len(data["individual_predictions"]) == 7
+
+        # Verify classifier names
+        classifier_names = {pred["name"] for pred in data["individual_predictions"]}
+        expected_names = {"rf", "svm", "mlp", "xgb", "lr", "nb", "dt"}
+        assert classifier_names == expected_names
+
+    def test_predict_ensemble_has_disagreement(self, client_with_ensemble):
+        """Test response includes disagreement field."""
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        data = response.json()
+        assert "disagreement" in data
+
+        # Check disagreement structure
+        disagreement = data["disagreement"]
+        assert "score" in disagreement
+        assert "is_edge_case" in disagreement
+        assert "vote_distribution" in disagreement
+        assert "agreeing_classifiers" in disagreement
+        assert "dissenting_classifiers" in disagreement
+
+    def test_predict_ensemble_response_structure(self, client_with_ensemble):
+        """Test response contains all required fields."""
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        data = response.json()
+
+        # Check all required fields
+        assert "url" in data
+        assert "ensemble_prediction" in data
+        assert "ensemble_probability" in data
+        assert "ensemble_confidence" in data
+        assert "individual_predictions" in data
+        assert "disagreement" in data
+        assert "voting_method" in data
+        assert "processing_time_ms" in data
+
+    def test_predict_ensemble_latency(self, client_with_ensemble):
+        """Test response time <500ms."""
+        start = time.time()
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        duration_ms = (time.time() - start) * 1000
+
+        assert response.status_code == 200
+        assert duration_ms < 500, f"Ensemble prediction took {duration_ms:.2f}ms (>500ms)"
+
+        # Verify reported processing time is reasonable
+        data = response.json()
+        assert 0 < data["processing_time_ms"] < 500
+
+    def test_predict_ensemble_invalid_url(self, client_with_ensemble):
+        """Test returns 422 for invalid URL."""
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "invalid-url"}
+        )
+        assert response.status_code == 422
+
+    def test_predict_ensemble_model_not_loaded(self):
+        """Test returns 503 if ensemble not loaded."""
+        from src.api.main import app, ml_models
+
+        ml_models.clear()  # Remove all models
+        client = TestClient(app)
+        response = client.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        assert response.status_code == 503
+        assert "Ensemble models not loaded" in response.json()["detail"]
+
+    def test_predict_ensemble_classifier_result_structure(self, client_with_ensemble):
+        """Test each classifier result has correct structure."""
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        data = response.json()
+
+        for pred in data["individual_predictions"]:
+            assert "name" in pred
+            assert "phishing_probability" in pred
+            assert "prediction" in pred
+            assert "confidence" in pred
+
+            # Validate types and ranges
+            assert isinstance(pred["name"], str)
+            assert 0.0 <= pred["phishing_probability"] <= 1.0
+            assert pred["prediction"] in ["phishing", "legitimate"]
+            assert 0.5 <= pred["confidence"] <= 1.0
+
+    def test_predict_ensemble_voting_method(self, client_with_ensemble):
+        """Test voting_method is set correctly."""
+        response = client_with_ensemble.post(
+            "/predict/ensemble", json={"url": "https://example.com"}
+        )
+        data = response.json()
+        assert data["voting_method"] == "soft"
