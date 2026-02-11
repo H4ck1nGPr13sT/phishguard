@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 **Core value:** Integracja wielu paradygmatów analizy w jeden spójny system, gdzie rozbieżności między metodami dostarczają dodatkowego kontekstu i zwiększają wiarygodność decyzji klasyfikacyjnej.
 
-**Current focus:** Phase 3 - ML Ensemble Expansion
+**Current focus:** Phase 4 - Genetic Algorithm Optimization
 
 ## Current Position
 
