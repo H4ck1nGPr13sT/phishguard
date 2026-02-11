@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 4 of 10 (Genetic Algorithm Optimization)
-Plan: 1 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 04-01-PLAN.md (GA Optimization Infrastructure)
+Last activity: 2026-02-11 — Completed 04-03-PLAN.md (Feature Selection Optimization)
 
-Progress: [███████░░░] 74%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 57 min
-- Total execution time: 13 hours 13 min
+- Total plans completed: 15
+- Average duration: 53 min
+- Total execution time: 13 hours 16 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [███████░░░] 74%
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
-| 04-genetic-algorithm-optimization | 1 | 4 min | 4 min |
+| 04-genetic-algorithm-optimization | 2 | 7 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (6 min), 03-03 (5 min), 03-04 (53 min), 04-01 (4 min)
+- Last 5 plans: 03-03 (5 min), 03-04 (53 min), 04-01 (4 min), 04-03 (3 min)
 - Note: 03-04 includes model retraining time for feature mismatch fix
 
 *Updated after each plan completion*
@@ -155,6 +155,16 @@ Recent decisions affecting current work:
 - HallOfFame(maxsize=10) preserves elite individuals across generations
 - Log-scale sampling for C, gamma, alpha enables uniform exploration across orders of magnitude
 
+**From 04-03 (2026-02-11):**
+- Binary representation (1=selected, 0=excluded) for GA feature selection
+- RF proxy classifier for fitness evaluation - fast and robust for feature selection across all classifiers
+- Minimum 5 features constraint prevents degenerate solutions
+- Two-point crossover and bit-flip mutation for binary GA (indpb=1/n_features)
+- Smaller population (30) and fewer generations (20) for binary search space vs hyperparameter optimization
+- GA feature selection identified 16 optimal features from 30 (46.7% reduction, +0.56% F1 improvement)
+- Structural features (entropy, special_char_count, dot_count) most discriminative
+- Many length features redundant - url_length sufficient, hostname/domain/tld less important
+
 ### Pending Todos
 
 None yet.
@@ -168,7 +178,7 @@ None yet.
 
 **Phase 3:** ✓ Complete - ensemble system with 7 classifiers + disagreement detection operational
 
-**Phase 4:** GA infrastructure complete (04-01). Ready for hyperparameter optimization, feature selection, and ensemble weight tuning
+**Phase 4:** GA infrastructure complete (04-01). Feature selection complete (04-03) - 16 optimal features identified. Ready for hyperparameter optimization and ensemble weight tuning
 
 **Phase 5:** Research needed for Bayesian network structure and modern rule-based heuristics (2026 threat landscape)
 
@@ -177,9 +187,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 04-01-PLAN.md (GA Optimization Infrastructure)
+Stopped at: Completed 04-03-PLAN.md (Feature Selection Optimization)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-11 (after 03-04)*
+*Last updated: 2026-02-11 (after 04-03)*
