@@ -15,6 +15,12 @@ from src.models.ensemble import (
     save_ensemble,
     load_ensemble
 )
+from src.models.disagreement import (
+    calculate_disagreement,
+    is_edge_case,
+    get_disagreement_summary,
+    DISAGREEMENT_THRESHOLD
+)
 
 __all__ = [
     'train_model',
@@ -31,5 +37,9 @@ __all__ = [
     'create_stacking_ensemble',
     'get_individual_predictions',
     'save_ensemble',
-    'load_ensemble'
+    'load_ensemble',
+    'calculate_disagreement',
+    'is_edge_case',
+    'get_disagreement_summary',
+    'DISAGREEMENT_THRESHOLD'
 ]
