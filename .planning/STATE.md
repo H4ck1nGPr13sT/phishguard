@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 3 of 10 (ML Ensemble Expansion)
-Plan: 3 of TBD in current phase
-Status: In progress
-Last activity: 2026-02-11 — Completed 03-03-PLAN.md (Disagreement Detection & Ensemble API)
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-11 — Completed 03-04-PLAN.md (Human Verification & Phase Completion)
 
-Progress: [██░░░░░░░░] 26%
+Progress: [███░░░░░░░] 28%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 61 min
-- Total execution time: 12 hours 16 min
+- Total plans completed: 13
+- Average duration: 62 min
+- Total execution time: 13 hours 9 min
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [██░░░░░░░░] 26%
 |-------|-------|-------|----------|
 | 01-foundation-data-pipeline | 4 | 21 min | 5 min |
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
-| 03-ml-ensemble-expansion | 3 | 16 min | 5 min |
+| 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-05 (11h 27min), 03-01 (5 min), 03-02 (6 min), 03-03 (5 min)
-- Note: 02-05 duration includes human verification pause, actual automation time ~2 min
+- Last 5 plans: 03-01 (5 min), 03-02 (6 min), 03-03 (5 min), 03-04 (53 min)
+- Note: 03-04 includes model retraining time for feature mismatch fix
 
 *Updated after each plan completion*
 
@@ -132,6 +132,17 @@ Recent decisions affecting current work:
 - DisagreementInfo includes score, edge case flag, vote distribution, agreeing/dissenting classifier lists
 - Backward compatible ensemble loading - API works with RF only if ensemble models missing
 
+**From 03-04 (2026-02-11):**
+- Retrained all models with real URL features from OpenPhish + legitimate URLs to fix feature mismatch
+- UCI ML pre-encoded features (-1/0/1) incompatible with our custom 30-feature extraction pipeline
+- OpenPhish public feed provides 300 phishing URLs without API key requirement
+- Balanced dataset at 125+125 URLs achieves 88-92% test accuracy (sufficient for MVP validation)
+- scripts/retrain_with_urls.py automates retraining for future model updates
+- load_model() enhanced to handle both dict-wrapped and direct Pipeline formats
+- Human verification confirmed: google.com → 98.9% legitimate, paypal-security-update.tk → 97.6% phishing
+- API latency <60ms for ensemble predictions (well below 500ms requirement)
+- Phase 3 complete: all 7 classifiers operational with disagreement detection functional
+
 ### Pending Todos
 
 None yet.
@@ -143,7 +154,9 @@ None yet.
 - Nazario corpus availability uncertain (original site archived) - may need Web Archive or alternative source
 - UCI ML dataset has features only (no raw URLs) - Phase 02 preprocessing must handle both URL-based and feature-based inputs
 
-**Phase 3:** Research needed for genetic algorithm fitness function design and hyperparameter search spaces
+**Phase 3:** ✓ Complete - ensemble system with 7 classifiers + disagreement detection operational
+
+**Phase 4:** Research needed for genetic algorithm fitness function design and hyperparameter search spaces
 
 **Phase 5:** Research needed for Bayesian network structure and modern rule-based heuristics (2026 threat landscape)
 
@@ -152,9 +165,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 03-03-PLAN.md (Disagreement Detection & Ensemble API)
+Stopped at: Completed 03-04-PLAN.md (Human Verification & Phase Completion) - Phase 3 complete
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-11 (after 03-03)*
+*Last updated: 2026-02-11 (after 03-04)*
