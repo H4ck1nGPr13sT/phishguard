@@ -20,6 +20,7 @@ from .fitness import (
     create_model_from_params,
     evaluate_individual,
 )
+from .ga_optimizer import run_ga_optimization, setup_toolbox
 from .search_spaces import (
     SEARCH_SPACES,
     decode_individual,
@@ -35,4 +36,7 @@ __all__ = [
     'evaluate_individual',
     'create_fitness_function',
     'create_model_from_params',
+    # GA optimizer
+    'setup_toolbox',
+    'run_ga_optimization',
 ]
