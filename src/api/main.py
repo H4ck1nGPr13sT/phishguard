@@ -11,6 +11,9 @@ from pathlib import Path
 from src.models.predict import load_model
 from src.models.ensemble import load_ensemble
 from src.optimization.model_registry import get_active_model
+from src.paradigms.rules import RuleEngine
+from src.paradigms.bayesian import BayesianClassifier
+from src.paradigms.aggregation import MultiParadigmAggregator
 
 # Global model storage - loaded once at startup
 ml_models = {}
@@ -85,8 +88,33 @@ async def lifespan(app: FastAPI):
         else:
             print(f"Warning: Ensemble directory not found at {ensemble_dir}")
 
+    # Load Phase 5 paradigm components
+    print("Loading Phase 5 paradigm components...")
+
+    # Load rule engine
+    try:
+        ml_models["rule_engine"] = RuleEngine()
+        print(f"Rule engine loaded: {len(ml_models['rule_engine'].ruleset.rules)} rules")
+    except Exception as e:
+        print(f"Warning: Failed to load rule engine: {e}")
+
+    # Load Bayesian classifier
+    bayesian_path = Path("models/bayesian/bayesian_classifier.joblib")
+    if bayesian_path.exists():
+        try:
+            ml_models["bayesian"] = BayesianClassifier.load(bayesian_path)
+            print("Bayesian classifier loaded")
+        except Exception as e:
+            print(f"Warning: Failed to load Bayesian classifier: {e}")
+    else:
+        print(f"Warning: Bayesian model not found at {bayesian_path}")
+
+    # Initialize aggregator
+    ml_models["aggregator"] = MultiParadigmAggregator()
+    print("Multi-paradigm aggregator initialized")
+
     total_models = len(ml_models)
-    print(f"Total models loaded: {total_models} (1 primary + {ensemble_loaded} ensemble)")
+    print(f"Total models loaded: {total_models} (1 primary + {ensemble_loaded} ensemble + Phase 5 paradigms)")
 
     yield  # Application runs here
 
@@ -96,10 +124,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="PhishGuard API",
-    description="REST API for URL phishing detection using ensemble of ML classifiers. "
-                "Provides single predictions (/predict) and ensemble predictions with "
-                "disagreement analysis (/predict/ensemble).",
-    version="1.0.0",
+    description="REST API for URL phishing detection using multi-paradigm analysis. "
+                "Combines ML ensemble (7 classifiers), rule-based expert system, "
+                "and Bayesian probabilistic classifier. "
+                "Provides single predictions (/predict), ensemble predictions "
+                "(/predict/ensemble), and multi-paradigm predictions (/predict/multi-paradigm).",
+    version="2.0.0",  # Updated version for Phase 5
     lifespan=lifespan,
 )
 
