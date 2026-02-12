@@ -80,7 +80,7 @@ class BayesianClassifier:
 
         # Extract class priors from underlying GaussianNB
         classifier = self.pipeline.named_steps['classifier']
-        prior_log_probs = classifier.class_log_prior_
+        priors = classifier.class_prior_
 
         # Build response
         phishing_prob = float(posterior[1])
@@ -92,10 +92,10 @@ class BayesianClassifier:
             'prediction': 'phishing' if phishing_prob > 0.5 else 'legitimate',
             'confidence': float(max(posterior)),
             'prior_info': {
-                'log_prior_legitimate': float(prior_log_probs[0]),
-                'log_prior_phishing': float(prior_log_probs[1]),
-                'prior_legitimate': float(np.exp(prior_log_probs[0])),
-                'prior_phishing': float(np.exp(prior_log_probs[1]))
+                'log_prior_legitimate': float(np.log(priors[0])),
+                'log_prior_phishing': float(np.log(priors[1])),
+                'prior_legitimate': float(priors[0]),
+                'prior_phishing': float(priors[1])
             }
         }
 
