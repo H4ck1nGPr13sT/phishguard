@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 5 of 10 (Alternative Detection Paradigms)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-12 — Completed 05-02-PLAN.md (Bayesian Probabilistic Classifier)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-12 — Completed 05-03-PLAN.md (Multi-Paradigm Aggregation Layer)
 
-Progress: [████████████░░░░░░░░░░░░░░] 57%
+Progress: [█████████████░░░░░░░░░░░░░] 59%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
-- Average duration: 42 min
-- Total execution time: 14 hours 45 min
+- Total plans completed: 22
+- Average duration: 41 min
+- Total execution time: 14 hours 49 min
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [████████████░░░░░░░░░░░
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
-| 05-alternative-detection-paradigms | 2 | 7 min | 4 min |
+| 05-alternative-detection-paradigms | 3 | 11 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-05 (5 min), 04-06 (3 min), 05-01 (3 min), 05-02 (4 min)
-- Note: Phase 05 alternative paradigms progressing rapidly (avg 4 min/plan)
+- Last 5 plans: 04-06 (3 min), 05-01 (3 min), 05-02 (4 min), 05-03 (4 min)
+- Note: Phase 05 complete - all alternative paradigms delivered (avg 4 min/plan)
 
 *Updated after each plan completion*
 
@@ -220,6 +220,16 @@ Recent decisions affecting current work:
 - Model size: 2.0K compressed with joblib (very lightweight)
 - Integration with existing feature extraction pipeline (extract_url_features)
 
+**From 05-03 (2026-02-12):**
+- Default paradigm weights: ML ensemble=0.5, Rules=0.3, Bayesian=0.2 (ML dominant but not overwhelming)
+- ParadigmWeights dataclass validates sum to 1.0 with soft warnings for out-of-range weights
+- Cross-paradigm disagreement uses normalized Shannon entropy: H / log2(3) for 3 paradigms
+- Disagreement threshold 0.7 consistent with Phase 3 classifier disagreement detection
+- Confidence calculated as 0.5 + |probability - 0.5| (distance from decision boundary)
+- MultiParadigmAggregator returns structured output: prediction, probability, confidence, contributions, disagreement, active_rules, explanation
+- Human-readable explanations with confidence levels (high/moderate/low) and disagreement warnings
+- 20-test suite validates weights, disagreement detection, and aggregation (all passing in 0.38s)
+
 ### Pending Todos
 
 None yet.
@@ -235,14 +245,14 @@ None yet.
 
 **Phase 4:** ✓ Complete - all GA optimization objectives achieved plus model versioning and comprehensive testing: hyperparameter tuning (+1.75% avg F1), feature selection (16 optimal features, 46.7% reduction), ensemble weight optimization (+1.96% F1 ensemble improvement), model registry with MLflow tracking, 24-test suite validates all modules. Human-verified optimization results. Ready for Phase 5 Bayesian reasoning
 
-**Phase 5:** ✓ Plans 1-2 complete - rule-based expert system (16 weighted rules) + Bayesian probabilistic classifier (F1=0.9390) operational. Ready for Plan 3 (multi-paradigm aggregation layer)
+**Phase 5:** ✓ Complete - All three alternative detection paradigms operational: (1) Rule-based expert system with 16 weighted rules, (2) Bayesian probabilistic classifier (F1=0.9390), (3) Multi-paradigm aggregation layer combining ML ensemble + rules + Bayesian with weighted voting and cross-paradigm disagreement detection. Ready for Phase 6 Integration Layer
 
 **Phase 7:** Research needed for OCR preprocessing techniques for adversarial images and visual similarity algorithms
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 05-02-PLAN.md (Bayesian Probabilistic Classifier)
+Stopped at: Completed 05-03-PLAN.md (Multi-Paradigm Aggregation Layer) - Phase 5 complete
 Resume file: None
 
 ---
