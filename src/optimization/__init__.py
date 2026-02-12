@@ -1,42 +1,68 @@
-"""Genetic algorithm optimization module for hyperparameter tuning.
+"""Genetic Algorithm Optimization Module.
 
-This module provides infrastructure for optimizing hyperparameters of all
-7 classifiers using DEAP (Distributed Evolutionary Algorithms in Python)
-with MLflow experiment tracking.
+Provides GA-based optimization for:
+- Hyperparameter tuning (GA-01)
+- Feature selection (GA-02)
+- Ensemble weight optimization (GA-03)
 
-Key components:
-- search_spaces: Defines bounded hyperparameter ranges for each classifier
-- fitness: Evaluates individuals using 5-fold CV F1-score
-- ga_optimizer: DEAP toolbox setup and evolution loop
-
-Usage:
-    >>> from src.optimization import SEARCH_SPACES, setup_toolbox, run_ga_optimization
-    >>> toolbox = setup_toolbox('rf', X_train, y_train)
-    >>> best, logbook, hof = run_ga_optimization(toolbox, population_size=50, n_generations=30)
+Uses DEAP framework with tournament selection, single-point crossover,
+and mutation operators (GA-04). Maximizes F1-score with 5-fold CV (GA-05).
+Tracks fitness history across generations (GA-06).
 """
 
-from .fitness import (
-    create_fitness_function,
-    create_model_from_params,
-    evaluate_individual,
-)
-from .ga_optimizer import run_ga_optimization, setup_toolbox
-from .search_spaces import (
+from src.optimization.search_spaces import (
     SEARCH_SPACES,
     decode_individual,
     get_search_space_size,
 )
+from src.optimization.fitness import (
+    create_fitness_function,
+    evaluate_individual,
+    create_model_from_params,
+)
+from src.optimization.ga_optimizer import (
+    setup_toolbox,
+    run_ga_optimization,
+)
+from src.optimization.feature_selection import (
+    setup_feature_selection_toolbox,
+    run_feature_selection,
+    get_selected_features,
+)
+from src.optimization.ensemble_weights import (
+    setup_weight_optimization_toolbox,
+    run_weight_optimization,
+    normalize_weights,
+    create_weighted_ensemble,
+)
+from src.optimization.model_registry import (
+    register_model,
+    compare_versions,
+    set_active_version,
+    get_active_model,
+    generate_comparison_report,
+)
+from src.optimization.mlflow_tracker import (
+    setup_experiment,
+    log_generation,
+    log_best_individual,
+)
 
 __all__ = [
     # Search spaces
-    'SEARCH_SPACES',
-    'decode_individual',
-    'get_search_space_size',
-    # Fitness evaluation
-    'evaluate_individual',
-    'create_fitness_function',
-    'create_model_from_params',
+    'SEARCH_SPACES', 'decode_individual', 'get_search_space_size',
+    # Fitness
+    'create_fitness_function', 'evaluate_individual', 'create_model_from_params',
     # GA optimizer
-    'setup_toolbox',
-    'run_ga_optimization',
+    'setup_toolbox', 'run_ga_optimization',
+    # Feature selection
+    'setup_feature_selection_toolbox', 'run_feature_selection', 'get_selected_features',
+    # Ensemble weights
+    'setup_weight_optimization_toolbox', 'run_weight_optimization',
+    'normalize_weights', 'create_weighted_ensemble',
+    # Model registry
+    'register_model', 'compare_versions', 'set_active_version',
+    'get_active_model', 'generate_comparison_report',
+    # MLflow tracking
+    'setup_experiment', 'log_generation', 'log_best_individual',
 ]
