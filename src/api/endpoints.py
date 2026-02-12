@@ -19,6 +19,11 @@ from src.api.models import (
     EnsemblePredictionResponse,
     ClassifierResult,
     DisagreementInfo,
+    MultiParadigmResponse,
+    FiredRule,
+    ParadigmContribution,
+    ParadigmContributions,
+    ParadigmDisagreementInfo,
 )
 from src.features.extractors import extract_url_features
 from src.api.main import ml_models
@@ -33,8 +38,8 @@ def root():
     """Root endpoint with API information."""
     return {
         "service": "PhishGuard API",
-        "version": "1.0.0",
-        "endpoints": ["/predict", "/predict/ensemble", "/health", "/docs"],
+        "version": "2.0.0",
+        "endpoints": ["/predict", "/predict/ensemble", "/predict/multi-paradigm", "/health", "/docs"],
     }
 
 
@@ -145,3 +150,126 @@ def predict_ensemble(request: URLRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ensemble prediction failed: {str(e)}")
+
+
+@router.post("/predict/multi-paradigm", response_model=MultiParadigmResponse, tags=["prediction"])
+def predict_multi_paradigm(request: URLRequest):
+    """
+    Predict phishing using all three paradigms: ML ensemble, rule-based, Bayesian.
+
+    This endpoint combines predictions from:
+    - ML ensemble: 7 classifiers with weighted soft voting
+    - Rule-based: Expert system with 15-20 phishing detection rules
+    - Bayesian: GaussianNB probabilistic classifier
+
+    Returns aggregated prediction with paradigm contributions, disagreement
+    detection, and list of active rules.
+
+    Requirements addressed:
+    - AGG-01: Combines ML ensemble, rules, and Bayesian
+    - AGG-02: Detects cross-paradigm disagreements
+    - AGG-03: Generates final decision with confidence
+    - AGG-04: Shows weighted contributions from each paradigm
+    - RULE-07: Returns active rules list with justifications
+
+    NOTE: Using sync 'def' not 'async def' because ML inference
+    is CPU-bound, not I/O-bound. FastAPI runs sync functions
+    in threadpool automatically.
+    """
+    start_time = time.time()
+
+    # Check required models are loaded
+    required_models = ["voting_soft", "rule_engine", "bayesian", "aggregator"]
+    missing = [m for m in required_models if m not in ml_models]
+    if missing:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Required models not loaded: {missing}. "
+                   f"Run model training scripts first."
+        )
+
+    try:
+        # Extract features from URL
+        features = extract_url_features(request.url)
+        feature_array = np.array([list(features.values())])
+
+        # 1. Get ML ensemble prediction
+        ensemble = ml_models["voting_soft"]
+        ensemble_proba = ensemble.predict_proba(feature_array)[0]
+        ml_result = {
+            'ensemble_probability': float(ensemble_proba[1]),
+            'prediction': 'phishing' if ensemble_proba[1] > 0.5 else 'legitimate'
+        }
+
+        # 2. Get rule-based prediction
+        # Pass raw_url for keyword matching (Plan 05-01 implements raw_url parameter)
+        rule_result = ml_models["rule_engine"].evaluate(features, raw_url=request.url)
+
+        # 3. Get Bayesian prediction
+        bayesian_result = ml_models["bayesian"].predict_with_posterior(feature_array)
+
+        # 4. Aggregate all three paradigms
+        aggregated = ml_models["aggregator"].aggregate(
+            ml_result, rule_result, bayesian_result
+        )
+
+        processing_time = (time.time() - start_time) * 1000
+
+        # Build response with proper Pydantic models
+        paradigm_contributions = ParadigmContributions(
+            ml_ensemble=ParadigmContribution(
+                probability=aggregated['paradigm_contributions']['ml_ensemble']['probability'],
+                weight=aggregated['paradigm_contributions']['ml_ensemble']['weight'],
+                weighted_contribution=aggregated['paradigm_contributions']['ml_ensemble']['weighted_contribution'],
+                prediction=aggregated['paradigm_contributions']['ml_ensemble']['prediction']
+            ),
+            rules=ParadigmContribution(
+                probability=aggregated['paradigm_contributions']['rules']['probability'],
+                weight=aggregated['paradigm_contributions']['rules']['weight'],
+                weighted_contribution=aggregated['paradigm_contributions']['rules']['weighted_contribution'],
+                prediction=aggregated['paradigm_contributions']['rules']['prediction']
+            ),
+            bayesian=ParadigmContribution(
+                probability=aggregated['paradigm_contributions']['bayesian']['probability'],
+                weight=aggregated['paradigm_contributions']['bayesian']['weight'],
+                weighted_contribution=aggregated['paradigm_contributions']['bayesian']['weighted_contribution'],
+                prediction=aggregated['paradigm_contributions']['bayesian']['prediction']
+            )
+        )
+
+        disagreement = ParadigmDisagreementInfo(
+            score=aggregated['disagreement']['score'],
+            is_edge_case=aggregated['disagreement']['is_edge_case'],
+            vote_distribution=aggregated['disagreement']['vote_distribution'],
+            probability_variance=aggregated['disagreement']['probability_variance'],
+            disagreeing_paradigms=aggregated['disagreement']['disagreeing_paradigms'],
+            probability_spread=aggregated['disagreement']['probability_spread']
+        )
+
+        active_rules = [
+            FiredRule(
+                name=rule.get('name', ''),
+                description=rule.get('description', ''),
+                weight=rule.get('weight', 0.0),
+                matched_values=rule.get('matched_values', [])
+            )
+            for rule in aggregated['active_rules']
+        ]
+
+        return MultiParadigmResponse(
+            url=request.url,
+            final_prediction=aggregated['final_prediction'],
+            final_probability=aggregated['final_probability'],
+            confidence=aggregated['confidence'],
+            paradigm_contributions=paradigm_contributions,
+            disagreement=disagreement,
+            active_rules=active_rules,
+            explanation=aggregated['explanation'],
+            processing_time_ms=processing_time
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Multi-paradigm prediction failed: {str(e)}"
+        )
