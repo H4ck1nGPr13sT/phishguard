@@ -17,9 +17,6 @@ from src.paradigms.rules.definitions import (
     RuleSet,
 )
 
-# RuleEngine import deferred until engine.py is created
-try:
-    from src.paradigms.rules.engine import RuleEngine
-    __all__ = ['RuleEngine', 'PhishingRule', 'RuleCondition', 'RuleSet']
-except ImportError:
-    __all__ = ['PhishingRule', 'RuleCondition', 'RuleSet']
+from src.paradigms.rules.engine import RuleEngine
+
+__all__ = ['RuleEngine', 'PhishingRule', 'RuleCondition', 'RuleSet']
