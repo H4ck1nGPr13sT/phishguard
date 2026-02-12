@@ -1,0 +1,185 @@
+version: "1.0.0"
+rules:
+  # URL Structure rules (4 rules)
+  - name: ip_address_host
+    description: "URL uses IP address instead of domain name"
+    weight: 0.35
+    category: url_structure
+    condition:
+      type: feature_check
+      feature: has_ip
+      operator: equals
+      value: 1
+  
+  - name: shortened_url
+    description: "URL uses known URL shortening service"
+    weight: 0.20
+    category: url_structure
+    condition:
+      type: domain_match
+      feature: domain
+      domains:
+        - bit.ly
+        - tinyurl.com
+        - goo.gl
+        - t.co
+        - ow.ly
+        - is.gd
+        - buff.ly
+  
+  - name: excessive_subdomains
+    description: "URL has more than 3 subdomains (potential obfuscation)"
+    weight: 0.15
+    category: url_structure
+    condition:
+      type: feature_check
+      feature: subdomain_count
+      operator: greater_than
+      value: 3
+  
+  - name: suspicious_tld
+    description: "URL uses suspicious top-level domain (.tk, .ml, .ga, .cf, .gq, .xyz)"
+    weight: 0.25
+    category: url_structure
+    condition:
+      type: feature_check
+      feature: has_suspicious_tld
+      operator: equals
+      value: 1
+  
+  # Keyword rules (5 rules)
+  - name: urgent_keywords
+    description: "URL contains urgent/pressure keywords"
+    weight: 0.20
+    category: keywords
+    condition:
+      type: keyword_match
+      keywords:
+        - urgent
+        - immediately
+        - suspended
+        - verify
+        - update
+  
+  - name: security_keywords
+    description: "URL contains security-themed keywords"
+    weight: 0.15
+    category: keywords
+    condition:
+      type: keyword_match
+      keywords:
+        - secure
+        - security
+        - confirm
+        - account
+        - validate
+  
+  - name: action_keywords
+    description: "URL contains credential-related action keywords"
+    weight: 0.15
+    category: keywords
+    condition:
+      type: keyword_match
+      keywords:
+        - login
+        - signin
+        - password
+        - credential
+  
+  - name: brand_impersonation
+    description: "URL mentions common brand names (potential impersonation)"
+    weight: 0.25
+    category: keywords
+    condition:
+      type: keyword_match
+      keywords:
+        - paypal
+        - ebay
+        - amazon
+        - microsoft
+        - apple
+        - netflix
+  
+  - name: threat_keywords
+    description: "URL contains account threat keywords"
+    weight: 0.20
+    category: keywords
+    condition:
+      type: keyword_match
+      keywords:
+        - suspended
+        - blocked
+        - locked
+        - unauthorized
+  
+  # Structure indicators (4 rules)
+  - name: long_url
+    description: "URL length exceeds 100 characters (potential obfuscation)"
+    weight: 0.10
+    category: structure
+    condition:
+      type: feature_check
+      feature: url_length
+      operator: greater_than
+      value: 100
+  
+  - name: many_special_chars
+    description: "URL contains more than 10 special characters"
+    weight: 0.15
+    category: structure
+    condition:
+      type: feature_check
+      feature: special_char_count
+      operator: greater_than
+      value: 10
+  
+  - name: high_entropy
+    description: "URL has high entropy (random-looking, over 4.5)"
+    weight: 0.15
+    category: structure
+    condition:
+      type: feature_check
+      feature: entropy
+      operator: greater_than
+      value: 4.5
+  
+  - name: deep_path
+    description: "URL path depth exceeds 5 levels (potential obfuscation)"
+    weight: 0.10
+    category: structure
+    condition:
+      type: feature_check
+      feature: path_depth
+      operator: greater_than
+      value: 5
+  
+  # Domain indicators (3 rules)
+  - name: no_https
+    description: "URL does not use HTTPS (insecure connection)"
+    weight: 0.15
+    category: domain
+    condition:
+      type: feature_check
+      feature: has_https
+      operator: equals
+      value: 0
+  
+  - name: port_in_url
+    description: "URL specifies non-standard port"
+    weight: 0.20
+    category: domain
+    condition:
+      type: feature_check
+      feature: has_port
+      operator: equals
+      value: 1
+  
+  - name: at_symbol
+    description: "URL contains @ symbol (credential-like obfuscation)"
+    weight: 0.30
+    category: domain
+    condition:
+      type: feature_check
+      feature: at_count
+      operator: greater_than
+      value: 0
