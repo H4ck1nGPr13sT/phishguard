@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 **Core value:** Integracja wielu paradygmatów analizy w jeden spójny system, gdzie rozbieżności między metodami dostarczają dodatkowego kontekstu i zwiększają wiarygodność decyzji klasyfikacyjnej.
 
-**Current focus:** Phase 4 - Genetic Algorithm Optimization
+**Current focus:** Phase 5 - Alternative Detection Paradigms
 
 ## Current Position
 
