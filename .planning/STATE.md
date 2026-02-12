@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 ## Current Position
 
-Phase: 4 of 10 (Genetic Algorithm Optimization)
-Plan: 6 of 6 in current phase
-Status: Phase complete
-Last activity: 2026-02-12 — Completed 04-06-PLAN.md (Testing & Human Verification)
+Phase: 5 of 10 (Alternative Detection Paradigms)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-12 — Completed 05-01-PLAN.md (Rule-Based Expert System)
 
-Progress: [██████████] 100%
+Progress: [████████████░░░░░░░░░░░░░░] 54%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
-- Average duration: 46 min
-- Total execution time: 14 hours 38 min
+- Total plans completed: 20
+- Average duration: 44 min
+- Total execution time: 14 hours 41 min
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: [██████████] 100%
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
+| 05-alternative-detection-paradigms | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-03 (23 min), 04-04 (3 min), 04-05 (5 min), 04-06 (3 min)
-- Note: 04-02 includes full GA optimization (30 gen), 04-06 comprehensive test suite
+- Last 5 plans: 04-04 (3 min), 04-05 (5 min), 04-06 (3 min), 05-01 (3 min)
+- Note: Phase 05 started with rule-based expert system
 
 *Updated after each plan completion*
 
@@ -201,6 +202,14 @@ Recent decisions affecting current work:
 - All Phase 4 requirements verified complete (GA-01 through GA-06, MODEL-03 through MODEL-05, EVAL-04)
 - Phase 4 complete: all genetic algorithm optimization objectives achieved
 
+**From 05-01 (2026-02-12):**
+- Rule-based expert system with 16 weighted phishing rules (total weight 3.05, normalized to [0, 1])
+- Three condition types: keyword_match (raw URL), feature_check (numeric features), domain_match (known domains)
+- Raw URL passed separately to evaluate() for keyword matching (not in feature dict)
+- Pydantic validation for rules with warning when total weight > 2.0 (potential redundancy)
+- Score normalization via min(total_score, 1.0) allows flexible rule weights
+- Rules cover URL structure (IP, shorteners, subdomains, TLDs), keywords (urgent, security, action, brands, threats), structure indicators (length, entropy, special chars), domain indicators (HTTPS, ports, @ symbol)
+
 ### Pending Todos
 
 None yet.
@@ -216,16 +225,16 @@ None yet.
 
 **Phase 4:** ✓ Complete - all GA optimization objectives achieved plus model versioning and comprehensive testing: hyperparameter tuning (+1.75% avg F1), feature selection (16 optimal features, 46.7% reduction), ensemble weight optimization (+1.96% F1 ensemble improvement), model registry with MLflow tracking, 24-test suite validates all modules. Human-verified optimization results. Ready for Phase 5 Bayesian reasoning
 
-**Phase 5:** Research needed for Bayesian network structure and modern rule-based heuristics (2026 threat landscape)
+**Phase 5:** ✓ Plan 1 complete - rule-based expert system with 16 weighted rules operational. Ready for Plan 2 (Bayesian reasoning) and Plan 3 (multi-paradigm aggregation)
 
 **Phase 7:** Research needed for OCR preprocessing techniques for adversarial images and visual similarity algorithms
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 04-06-PLAN.md (Testing & Human Verification) - Phase 4 complete
+Stopped at: Completed 05-01-PLAN.md (Rule-Based Expert System)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-12 (after 04-06)*
+*Last updated: 2026-02-12 (after 05-01)*
