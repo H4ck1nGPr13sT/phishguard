@@ -148,3 +148,114 @@ class EnsemblePredictionResponse(BaseModel):
     processing_time_ms: float = Field(
         ..., description="Time taken to process request in milliseconds"
     )
+
+
+class FiredRule(BaseModel):
+    """Fired rule from rule-based system."""
+
+    name: str = Field(..., description="Rule identifier")
+    description: str = Field(..., description="Human-readable rule description")
+    weight: float = Field(..., ge=0.0, le=1.0, description="Rule weight")
+    matched_values: list[str] = Field(
+        default_factory=list,
+        description="Specific values that triggered this rule"
+    )
+
+
+class ParadigmContribution(BaseModel):
+    """Contribution from a single paradigm."""
+
+    probability: float = Field(..., ge=0.0, le=1.0, description="Paradigm probability")
+    weight: float = Field(..., ge=0.0, le=1.0, description="Paradigm weight in aggregation")
+    weighted_contribution: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="probability * weight"
+    )
+    prediction: Literal["phishing", "legitimate"] = Field(
+        ..., description="This paradigm's individual prediction"
+    )
+
+
+class ParadigmContributions(BaseModel):
+    """All paradigm contributions."""
+
+    ml_ensemble: ParadigmContribution
+    rules: ParadigmContribution
+    bayesian: ParadigmContribution
+
+
+class ParadigmDisagreementInfo(BaseModel):
+    """Cross-paradigm disagreement analysis."""
+
+    score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Normalized entropy across paradigms (0=agreement, 1=max disagreement)"
+    )
+    is_edge_case: bool = Field(
+        ..., description="True if disagreement exceeds threshold (0.7)"
+    )
+    vote_distribution: dict = Field(
+        ..., description="Vote counts: {'phishing': N, 'legitimate': M}"
+    )
+    probability_variance: float = Field(
+        ..., description="Variance in probabilities across paradigms"
+    )
+    disagreeing_paradigms: list[str] = Field(
+        ..., description="Paradigms disagreeing with majority"
+    )
+    probability_spread: float = Field(
+        ..., description="Max - min probability across paradigms"
+    )
+
+
+class MultiParadigmResponse(BaseModel):
+    """Response model for multi-paradigm prediction endpoint.
+
+    Combines predictions from:
+    - ML ensemble (7 classifiers with weighted voting)
+    - Rule-based expert system (weighted phishing rules)
+    - Bayesian probabilistic classifier (GaussianNB)
+
+    Requirements addressed:
+    - AGG-01: Combines all three paradigms
+    - AGG-02: Includes disagreement detection with is_edge_case
+    - AGG-03: Final prediction with confidence
+    - AGG-04: Paradigm contributions with weights
+    - RULE-07: Active rules list with explanations
+    """
+
+    url: str
+    final_prediction: Literal["phishing", "legitimate"] = Field(
+        ..., description="Aggregated prediction from all paradigms"
+    )
+    final_probability: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Weighted probability (threshold 0.5)"
+    )
+    confidence: float = Field(
+        ...,
+        ge=0.5,
+        le=1.0,
+        description="Confidence level (0.5 + distance from threshold)"
+    )
+    paradigm_contributions: ParadigmContributions = Field(
+        ..., description="Contributions from each paradigm"
+    )
+    disagreement: ParadigmDisagreementInfo = Field(
+        ..., description="Cross-paradigm disagreement analysis"
+    )
+    active_rules: list[FiredRule] = Field(
+        ..., description="Rules that fired from rule-based system"
+    )
+    explanation: str = Field(
+        ..., description="Human-readable explanation of prediction"
+    )
+    processing_time_ms: float = Field(
+        ..., description="Total processing time in milliseconds"
+    )
