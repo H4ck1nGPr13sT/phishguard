@@ -130,10 +130,14 @@ Plans:
   4. System detects paradigm disagreements (e.g., ML says 95% phishing, Bayesian says 40%) and flags for review
   5. Final verdict includes contributions from all three paradigms with confidence score and active rules list
 
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 05-01-PLAN.md — Rule-based expert system with weighted YAML rules
+- [ ] 05-02-PLAN.md — Bayesian probabilistic classifier (GaussianNB)
+- [ ] 05-03-PLAN.md — Multi-paradigm aggregation layer with disagreement detection
+- [ ] 05-04-PLAN.md — /predict/multi-paradigm API endpoint
+- [ ] 05-05-PLAN.md — Testing and human verification
 
 ### Phase 6: Email & SMS Support
 **Goal**: Expand from URL-only to email and SMS analysis with NLP-based feature extraction (headers, sentiment, stylometry).
@@ -241,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. Core ML Pipeline - URL Detection MVP | 5/5 | ✓ Complete | 2026-02-11 |
 | 3. ML Ensemble Expansion | 4/4 | ✓ Complete | 2026-02-11 |
 | 4. Genetic Algorithm Optimization | 6/6 | ✓ Complete | 2026-02-12 |
-| 5. Alternative Detection Paradigms | 0/TBD | Not started | - |
+| 5. Alternative Detection Paradigms | 0/5 | Planned | - |
 | 6. Email & SMS Support | 0/TBD | Not started | - |
 | 7. OCR & Visual Analysis | 0/TBD | Not started | - |
 | 8. Batch Processing & Web Interface | 0/TBD | Not started | - |
