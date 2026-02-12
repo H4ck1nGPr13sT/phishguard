@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 5 of 10 (Alternative Detection Paradigms)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-12 — Completed 05-01-PLAN.md (Rule-Based Expert System)
+Last activity: 2026-02-12 — Completed 05-02-PLAN.md (Bayesian Probabilistic Classifier)
 
-Progress: [████████████░░░░░░░░░░░░░░] 54%
+Progress: [████████████░░░░░░░░░░░░░░] 57%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 44 min
-- Total execution time: 14 hours 41 min
+- Total plans completed: 21
+- Average duration: 42 min
+- Total execution time: 14 hours 45 min
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [████████████░░░░░░░░░░░
 | 02-core-ml-pipeline-url-detection-mvp | 5 | 11h 39min | 2h 20min |
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
-| 05-alternative-detection-paradigms | 1 | 3 min | 3 min |
+| 05-alternative-detection-paradigms | 2 | 7 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-04 (3 min), 04-05 (5 min), 04-06 (3 min), 05-01 (3 min)
-- Note: Phase 05 started with rule-based expert system
+- Last 5 plans: 04-05 (5 min), 04-06 (3 min), 05-01 (3 min), 05-02 (4 min)
+- Note: Phase 05 alternative paradigms progressing rapidly (avg 4 min/plan)
 
 *Updated after each plan completion*
 
@@ -210,6 +210,16 @@ Recent decisions affecting current work:
 - Score normalization via min(total_score, 1.0) allows flexible rule weights
 - Rules cover URL structure (IP, shorteners, subdomains, TLDs), keywords (urgent, security, action, brands, threats), structure indicators (length, entropy, special chars), domain indicators (HTTPS, ports, @ symbol)
 
+**From 05-02 (2026-02-12):**
+- BayesianClassifier wraps GaussianNB with Pipeline (StandardScaler + GaussianNB) for feature normalization
+- class_prior_ attribute (not class_log_prior_) used to extract class priors from fitted GaussianNB
+- predict_with_posterior() returns structured dict: posterior_phishing, posterior_legitimate, prediction, confidence, prior_info
+- Prior information includes both log-scale and probability-scale priors for interpretability
+- var_smoothing=1e-9 default parameter for numerical stability (sklearn default)
+- Trained model achieves F1=0.9390 (5-fold CV) on 200 URL samples (comparable to ensemble classifiers)
+- Model size: 2.0K compressed with joblib (very lightweight)
+- Integration with existing feature extraction pipeline (extract_url_features)
+
 ### Pending Todos
 
 None yet.
@@ -225,16 +235,16 @@ None yet.
 
 **Phase 4:** ✓ Complete - all GA optimization objectives achieved plus model versioning and comprehensive testing: hyperparameter tuning (+1.75% avg F1), feature selection (16 optimal features, 46.7% reduction), ensemble weight optimization (+1.96% F1 ensemble improvement), model registry with MLflow tracking, 24-test suite validates all modules. Human-verified optimization results. Ready for Phase 5 Bayesian reasoning
 
-**Phase 5:** ✓ Plan 1 complete - rule-based expert system with 16 weighted rules operational. Ready for Plan 2 (Bayesian reasoning) and Plan 3 (multi-paradigm aggregation)
+**Phase 5:** ✓ Plans 1-2 complete - rule-based expert system (16 weighted rules) + Bayesian probabilistic classifier (F1=0.9390) operational. Ready for Plan 3 (multi-paradigm aggregation layer)
 
 **Phase 7:** Research needed for OCR preprocessing techniques for adversarial images and visual similarity algorithms
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 05-01-PLAN.md (Rule-Based Expert System)
+Stopped at: Completed 05-02-PLAN.md (Bayesian Probabilistic Classifier)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-12 (after 05-01)*
+*Last updated: 2026-02-12 (after 05-02)*
