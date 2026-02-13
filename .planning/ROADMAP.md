@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Core ML Pipeline - URL Detection MVP** - Single-classifier URL phishing detector with FastAPI endpoint ✓ 2026-02-11
 - [x] **Phase 3: ML Ensemble Expansion** - 7-classifier ensemble with voting and disagreement detection ✓ 2026-02-11
 - [x] **Phase 4: Genetic Algorithm Optimization** - Hyperparameter tuning and model versioning ✓ 2026-02-12
-- [ ] **Phase 5: Alternative Detection Paradigms** - Rule-based expert system and Bayesian probabilistic analysis
+- [x] **Phase 5: Alternative Detection Paradigms** - Rule-based expert system and Bayesian probabilistic analysis ✓ 2026-02-13
 - [ ] **Phase 6: Email & SMS Support** - Expand input types with NLP feature extraction
 - [ ] **Phase 7: OCR & Visual Analysis** - Image-based phishing detection with text extraction
 - [ ] **Phase 8: Batch Processing & Web Interface** - User-facing web application and CSV batch analysis
@@ -133,11 +133,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Rule-based expert system with weighted YAML rules
-- [ ] 05-02-PLAN.md — Bayesian probabilistic classifier (GaussianNB)
-- [ ] 05-03-PLAN.md — Multi-paradigm aggregation layer with disagreement detection
-- [ ] 05-04-PLAN.md — /predict/multi-paradigm API endpoint
-- [ ] 05-05-PLAN.md — Testing and human verification
+- [x] 05-01-PLAN.md — Rule-based expert system with weighted YAML rules
+- [x] 05-02-PLAN.md — Bayesian probabilistic classifier (GaussianNB)
+- [x] 05-03-PLAN.md — Multi-paradigm aggregation layer with disagreement detection
+- [x] 05-04-PLAN.md — /predict/multi-paradigm API endpoint
+- [x] 05-05-PLAN.md — Testing and human verification
 
 ### Phase 6: Email & SMS Support
 **Goal**: Expand from URL-only to email and SMS analysis with NLP-based feature extraction (headers, sentiment, stylometry).
@@ -245,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. Core ML Pipeline - URL Detection MVP | 5/5 | ✓ Complete | 2026-02-11 |
 | 3. ML Ensemble Expansion | 4/4 | ✓ Complete | 2026-02-11 |
 | 4. Genetic Algorithm Optimization | 6/6 | ✓ Complete | 2026-02-12 |
-| 5. Alternative Detection Paradigms | 0/5 | Planned | - |
+| 5. Alternative Detection Paradigms | 5/5 | ✓ Complete | 2026-02-13 |
 | 6. Email & SMS Support | 0/TBD | Not started | - |
 | 7. OCR & Visual Analysis | 0/TBD | Not started | - |
 | 8. Batch Processing & Web Interface | 0/TBD | Not started | - |
@@ -254,4 +254,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 ---
 *Roadmap created: 2026-02-09*
-*Last updated: 2026-02-12*
+*Last updated: 2026-02-13*
