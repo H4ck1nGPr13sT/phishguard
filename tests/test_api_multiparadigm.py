@@ -205,17 +205,26 @@ class TestMultiParadigmMissingModels:
     """Test error handling when models are missing."""
 
     def test_missing_models_returns_503(self):
-        """Test 503 returned when required models missing."""
-        # Clear all models
-        ml_models.clear()
+        """Test 503 returned when required models missing.
 
+        Note: This test clears models AFTER lifespan has loaded them,
+        simulating a scenario where models become unavailable.
+        """
         with TestClient(app) as client:
-            response = client.post(
-                "/predict/multi-paradigm",
-                json={"url": "http://example.com"}
-            )
-            assert response.status_code == 503
-            assert "not loaded" in response.json()['detail'].lower()
+            # Clear models after lifespan has run (simulates runtime failure)
+            original_models = ml_models.copy()
+            ml_models.clear()
+
+            try:
+                response = client.post(
+                    "/predict/multi-paradigm",
+                    json={"url": "http://example.com"}
+                )
+                assert response.status_code == 503
+                assert "not loaded" in response.json()['detail'].lower()
+            finally:
+                # Restore models for other tests
+                ml_models.update(original_models)
 
 
 class TestRootEndpoint:
