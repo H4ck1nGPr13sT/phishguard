@@ -153,10 +153,16 @@ Plans:
   4. System retrains all classifiers with expanded feature set including email/SMS-specific features
   5. System handles email, SMS, and URL inputs via unified API with content-type detection
 
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 06-01-PLAN.md — Email parser and header feature extraction
+- [ ] 06-02-PLAN.md — NLP text feature extraction (spaCy, textstat)
+- [ ] 06-03-PLAN.md — SMS feature extraction with shortened URL detection
+- [ ] 06-04-PLAN.md — Unified feature extractor integration
+- [ ] 06-05-PLAN.md — API endpoints for email and SMS prediction
+- [ ] 06-06-PLAN.md — Model retraining with expanded features
+- [ ] 06-07-PLAN.md — Testing and human verification
 
 ### Phase 7: OCR & Visual Analysis
 **Goal**: Image-based phishing detection with OCR text extraction (EasyOCR) and visual similarity analysis for brand logo detection.
@@ -246,7 +252,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. ML Ensemble Expansion | 4/4 | ✓ Complete | 2026-02-11 |
 | 4. Genetic Algorithm Optimization | 6/6 | ✓ Complete | 2026-02-12 |
 | 5. Alternative Detection Paradigms | 5/5 | ✓ Complete | 2026-02-13 |
-| 6. Email & SMS Support | 0/TBD | Not started | - |
+| 6. Email & SMS Support | 0/7 | Planned | - |
 | 7. OCR & Visual Analysis | 0/TBD | Not started | - |
 | 8. Batch Processing & Web Interface | 0/TBD | Not started | - |
 | 9. Explainability & Dashboard | 0/TBD | Not started | - |
