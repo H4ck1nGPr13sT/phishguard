@@ -48,6 +48,7 @@ async def lifespan(app: FastAPI):
     ensemble_loaded = 0
     try:
         ml_models["ensemble"] = get_active_model("ensemble")
+        ml_models["voting_soft"] = ml_models["ensemble"]  # Alias for endpoint compatibility
         ensemble_loaded += 1
         print(f"Active ensemble loaded from registry (weighted voting)")
     except FileNotFoundError:
