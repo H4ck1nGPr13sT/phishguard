@@ -14,6 +14,7 @@ from src.optimization.model_registry import get_active_model
 from src.paradigms.rules import RuleEngine
 from src.paradigms.bayesian import BayesianClassifier
 from src.paradigms.aggregation import MultiParadigmAggregator
+import joblib
 
 # Global model storage - loaded once at startup
 ml_models = {}
@@ -114,8 +115,40 @@ async def lifespan(app: FastAPI):
     ml_models["aggregator"] = MultiParadigmAggregator()
     print("Multi-paradigm aggregator initialized")
 
+    # Load email/SMS models (Phase 6)
+    email_sms_dir = Path("models/email_sms")
+    email_sms_loaded = 0
+    if email_sms_dir.exists():
+        # Load email ensemble
+        email_ensemble_path = email_sms_dir / "ensemble_email.joblib"
+        if email_ensemble_path.exists():
+            try:
+                email_model_data = joblib.load(email_ensemble_path)
+                ml_models["email_ensemble"] = email_model_data["model"]
+                ml_models["email_feature_names"] = email_model_data["feature_names"]
+                ml_models["email_feature_count"] = email_model_data["feature_count"]
+                email_sms_loaded += 1
+                print(f"Email ensemble loaded ({email_model_data['feature_count']} features, {email_model_data['test_accuracy']:.4f} accuracy)")
+            except Exception as e:
+                print(f"Warning: Failed to load email ensemble: {e}")
+
+        # Load SMS ensemble
+        sms_ensemble_path = email_sms_dir / "ensemble_sms.joblib"
+        if sms_ensemble_path.exists():
+            try:
+                sms_model_data = joblib.load(sms_ensemble_path)
+                ml_models["sms_ensemble"] = sms_model_data["model"]
+                ml_models["sms_feature_names"] = sms_model_data["feature_names"]
+                ml_models["sms_feature_count"] = sms_model_data["feature_count"]
+                email_sms_loaded += 1
+                print(f"SMS ensemble loaded ({sms_model_data['feature_count']} features, {sms_model_data['test_accuracy']:.4f} accuracy)")
+            except Exception as e:
+                print(f"Warning: Failed to load SMS ensemble: {e}")
+    else:
+        print(f"Warning: Email/SMS models not found. Run scripts/train_email_sms_models.py")
+
     total_models = len(ml_models)
-    print(f"Total models loaded: {total_models} (1 primary + {ensemble_loaded} ensemble + Phase 5 paradigms)")
+    print(f"Total models loaded: {total_models} (1 primary + {ensemble_loaded} ensemble + Phase 5 paradigms + {email_sms_loaded} email/SMS)")
 
     yield  # Application runs here
 
@@ -130,7 +163,7 @@ app = FastAPI(
                 "and Bayesian probabilistic classifier. "
                 "Provides single predictions (/predict), ensemble predictions "
                 "(/predict/ensemble), and multi-paradigm predictions (/predict/multi-paradigm).",
-    version="2.0.0",  # Updated version for Phase 5
+    version="3.0.0",  # Updated version for Phase 6 email/SMS support
     lifespan=lifespan,
 )
 

@@ -62,6 +62,8 @@ def health():
     return HealthResponse(
         status="healthy" if "phishing_detector" in ml_models else "unhealthy",
         model_loaded="phishing_detector" in ml_models,
+        email_model_loaded="email_ensemble" in ml_models,
+        sms_model_loaded="sms_ensemble" in ml_models,
     )
 
 
@@ -307,9 +309,12 @@ def predict_email(request: EmailTextRequest):
     """
     start_time = time.time()
 
-    # Verify models loaded
-    if "voting_soft" not in ml_models:
-        raise HTTPException(status_code=503, detail="Models not loaded")
+    # Verify models loaded - use email_ensemble if available, fallback to voting_soft
+    if "email_ensemble" not in ml_models:
+        raise HTTPException(
+            status_code=503,
+            detail="Email model not loaded. Run scripts/train_email_sms_models.py"
+        )
 
     try:
         # Extract features from email text
@@ -318,23 +323,8 @@ def predict_email(request: EmailTextRequest):
         features = extract_email_features(raw_bytes)
         feature_array = np.array([list(features.values())])
 
-        # Check feature count compatibility
-        # Current models are trained on 30 URL features
-        # Email/SMS features will be supported after model retraining (Plan 06-06)
-        ensemble = ml_models["voting_soft"]
-        try:
-            expected_features = ensemble.named_steps['scaler'].n_features_in_
-        except AttributeError:
-            # Fallback if scaler doesn't have n_features_in_
-            expected_features = 30  # Known URL feature count
-
-        if len(features) != expected_features:
-            raise HTTPException(
-                status_code=501,
-                detail=f"Email prediction not yet supported. Models trained on {expected_features} "
-                       f"URL features but email has {len(features)} features. "
-                       f"Model retraining with email/SMS features scheduled for Plan 06-06."
-            )
+        # Use email-specific ensemble model
+        ensemble = ml_models["email_ensemble"]
 
         # Get prediction using ensemble model
         proba = ensemble.predict_proba(feature_array)[0]
@@ -399,31 +389,19 @@ async def predict_email_file(
         raise HTTPException(status_code=400, detail="File too large (max 5MB)")
 
     # Verify models loaded
-    if "voting_soft" not in ml_models:
-        raise HTTPException(status_code=503, detail="Models not loaded")
+    if "email_ensemble" not in ml_models:
+        raise HTTPException(
+            status_code=503,
+            detail="Email model not loaded. Run scripts/train_email_sms_models.py"
+        )
 
     try:
         # Extract features from email bytes
         features = extract_email_features(contents)
         feature_array = np.array([list(features.values())])
 
-        # Check feature count compatibility
-        # Current models are trained on 30 URL features
-        # Email/SMS features will be supported after model retraining (Plan 06-06)
-        ensemble = ml_models["voting_soft"]
-        try:
-            expected_features = ensemble.named_steps['scaler'].n_features_in_
-        except AttributeError:
-            # Fallback if scaler doesn't have n_features_in_
-            expected_features = 30  # Known URL feature count
-
-        if len(features) != expected_features:
-            raise HTTPException(
-                status_code=501,
-                detail=f"Email prediction not yet supported. Models trained on {expected_features} "
-                       f"URL features but email has {len(features)} features. "
-                       f"Model retraining with email/SMS features scheduled for Plan 06-06."
-            )
+        # Use email-specific ensemble model
+        ensemble = ml_models["email_ensemble"]
 
         # Get prediction using ensemble model
         proba = ensemble.predict_proba(feature_array)[0]
@@ -477,31 +455,20 @@ def predict_sms(request: SMSRequest):
     """
     start_time = time.time()
 
-    if "voting_soft" not in ml_models:
-        raise HTTPException(status_code=503, detail="Models not loaded")
+    # Verify models loaded - use sms_ensemble
+    if "sms_ensemble" not in ml_models:
+        raise HTTPException(
+            status_code=503,
+            detail="SMS model not loaded. Run scripts/train_email_sms_models.py"
+        )
 
     try:
         # Extract features from SMS message
         features = extract_sms_features(request.message)
         feature_array = np.array([list(features.values())])
 
-        # Check feature count compatibility
-        # Current models are trained on 30 URL features
-        # Email/SMS features will be supported after model retraining (Plan 06-06)
-        ensemble = ml_models["voting_soft"]
-        try:
-            expected_features = ensemble.named_steps['scaler'].n_features_in_
-        except AttributeError:
-            # Fallback if scaler doesn't have n_features_in_
-            expected_features = 30  # Known URL feature count
-
-        if len(features) != expected_features:
-            raise HTTPException(
-                status_code=501,
-                detail=f"SMS prediction not yet supported. Models trained on {expected_features} "
-                       f"URL features but SMS has {len(features)} features. "
-                       f"Model retraining with email/SMS features scheduled for Plan 06-06."
-            )
+        # Use SMS-specific ensemble model
+        ensemble = ml_models["sms_ensemble"]
 
         # Get prediction using ensemble model
         proba = ensemble.predict_proba(feature_array)[0]

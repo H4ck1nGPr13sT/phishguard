@@ -64,7 +64,9 @@ class HealthResponse(BaseModel):
 
     status: str
     model_loaded: bool
-    version: str = "1.0.0"
+    email_model_loaded: bool = False
+    sms_model_loaded: bool = False
+    version: str = "3.0.0"
 
 
 class ErrorResponse(BaseModel):
