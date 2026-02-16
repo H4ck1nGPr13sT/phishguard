@@ -69,8 +69,11 @@ def parse_sms(message: str) -> dict:
         }
 
     # Extract URLs (both with and without protocol)
-    # Match http(s):// URLs and common short domains without protocol
-    url_pattern = r'https?://[^\s]+|(?:bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gd)/[^\s]+'
+    # Match http(s):// URLs and shortened domains without protocol
+    # Build pattern from SHORTENED_URL_DOMAINS dynamically
+    escaped_domains = [domain.replace('.', r'\.') for domain in SHORTENED_URL_DOMAINS]
+    shortened_pattern = '|'.join(escaped_domains)
+    url_pattern = rf'https?://[^\s]+|(?:{shortened_pattern})/[^\s]+'
     urls = re.findall(url_pattern, message, re.IGNORECASE)
 
     # Extract phone numbers
