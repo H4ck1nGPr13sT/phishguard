@@ -19,6 +19,7 @@ from src.features.url_features import (
     extract_length_features,
     extract_structure_features,
 )
+from email import message_from_bytes, policy
 from src.features.email_features import parse_email, extract_email_header_features
 from src.features.text_features import TextFeatureExtractor
 from src.features.sms_features import extract_sms_features as extract_sms_specific_features
@@ -150,7 +151,7 @@ def extract_email_features(raw_email: bytes) -> Dict[str, float]:
     Examples:
         >>> email = b"From: phisher@evil.tk\\nSubject: URGENT ACTION REQUIRED\\n\\nVerify now!"
         >>> features = extract_email_features(email)
-        >>> features['has_suspicious_sender_tld']
+        >>> features['from_domain_suspicious']
         1
         >>> features['text_has_urgency']
         1
@@ -159,7 +160,7 @@ def extract_email_features(raw_email: bytes) -> Dict[str, float]:
     """
     if not raw_email:
         # Return default header features + default text features
-        header_features = extract_email_header_features({})
+        header_features = extract_email_header_features(None)
         text_extractor = get_text_extractor()
         text_features = text_extractor.extract_all_features("")
         # Prefix text features
@@ -167,11 +168,16 @@ def extract_email_features(raw_email: bytes) -> Dict[str, float]:
         return {**header_features, **text_features_prefixed}
 
     try:
-        # Parse email
+        # Parse email for both header and text extraction
+        # parse_email() returns dict with headers and body
         parsed = parse_email(raw_email)
 
-        # Extract header features
-        header_features = extract_email_header_features(parsed['headers'])
+        # Parse again to get EmailMessage object for header features
+        # (extract_email_header_features expects EmailMessage, not dict)
+        msg = message_from_bytes(raw_email, policy=policy.default)
+
+        # Extract header features from EmailMessage object
+        header_features = extract_email_header_features(msg)
 
         # Extract text features from body
         text_extractor = get_text_extractor()
@@ -185,7 +191,7 @@ def extract_email_features(raw_email: bytes) -> Dict[str, float]:
 
     except Exception:
         # On parse failure, return defaults
-        header_features = extract_email_header_features({})
+        header_features = extract_email_header_features(None)
         text_extractor = get_text_extractor()
         text_features = text_extractor.extract_all_features("")
         text_features_prefixed = {f"text_{k}": v for k, v in text_features.items()}
