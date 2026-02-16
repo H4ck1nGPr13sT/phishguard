@@ -6,23 +6,23 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 **Core value:** Integracja wielu paradygmatów analizy w jeden spójny system, gdzie rozbieżności między metodami dostarczają dodatkowego kontekstu i zwiększają wiarygodność decyzji klasyfikacyjnej.
 
-**Current focus:** Phase 5 - Alternative Detection Paradigms
+**Current focus:** Phase 6 - Email/SMS Support
 
 ## Current Position
 
-Phase: 5 of 10 (Alternative Detection Paradigms)
-Plan: 5 of 5 in current phase
-Status: Phase complete
-Last activity: 2026-02-13 — Completed 05-05-PLAN.md (Testing & Human Verification)
+Phase: 6 of 10 (Email/SMS Support)
+Plan: 3 of 7 in current phase
+Status: In progress
+Last activity: 2026-02-16 — Completed 06-03-PLAN.md (SMS Feature Extraction)
 
-Progress: [████████████████░░░░░░░░░░] 65%
+Progress: [████████████████████░░░░░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
-- Average duration: 39 min
-- Total execution time: 15 hours 7 min
+- Total plans completed: 25
+- Average duration: 37 min
+- Total execution time: 15 hours 11 min
 
 **By Phase:**
 
@@ -33,10 +33,11 @@ Progress: [████████████████░░░░░░░
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
 | 05-alternative-detection-paradigms | 5 | 29 min | 6 min |
+| 06-email-sms-support | 1 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (3 min), 05-02 (4 min), 05-03 (4 min), 05-04 (3 min), 05-05 (15 min)
-- Note: Phase 05 complete - all alternative paradigms delivered with comprehensive testing and human verification (avg 6 min/plan)
+- Last 5 plans: 05-02 (4 min), 05-03 (4 min), 05-04 (3 min), 05-05 (15 min), 06-03 (4 min)
+- Note: Phase 06 in progress - SMS feature extraction delivered (1 of 7 plans)
 
 *Updated after each plan completion*
 
@@ -246,6 +247,17 @@ Recent decisions affecting current work:
 - Fixed voting_soft alias in API for registry-loaded ensemble compatibility
 - All 88 tests pass across Phase 5 test suites (22 rules + 18 integration + 11 bayesian + 20 aggregation + 12 API + 5 misc)
 
+**From 06-03 (2026-02-16):**
+- SMS feature extraction module with 20 smishing-specific features
+- Four feature categories: length (4), URL (4), phone (2), character (4), patterns (6)
+- Dynamic regex pattern for shortened URL detection (14 common domains: bit.ly, tinyurl, t.co, etc.)
+- Pattern detection: urgency caps (URGENT, ALERT), prize claims (won, prize), account alerts (suspended, verify)
+- SMS shorthand ratio detection (u, ur, plz, asap, etc. / word count)
+- Emoji detection via Unicode ranges (U+1F600-U+1F9FF) without external dependencies
+- parse_sms() extracts URLs, phone numbers, detects multipart (>160 chars)
+- 24 comprehensive unit tests across 5 test classes (all passing in <0.05s)
+- No duplication of NLP features - SMS features focus on message-specific patterns only
+
 ### Pending Todos
 
 None yet.
@@ -267,10 +279,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Completed 05-05-PLAN.md (Testing & Human Verification) - Phase 5 complete
+Last session: 2026-02-16
+Stopped at: Completed 06-03-PLAN.md (SMS Feature Extraction)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-13 (after 05-05)*
+*Last updated: 2026-02-16 (after 06-03)*
