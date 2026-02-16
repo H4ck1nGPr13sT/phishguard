@@ -3,9 +3,12 @@
 This module provides the primary extract_url_features() function that combines
 all feature extraction functions into a single interface. It handles URL parsing
 and edge cases, returning a consistent dictionary of 30+ numeric features.
+
+Extended in Phase 06 to support unified extraction for URL, Email, and SMS inputs.
 """
 
-from typing import Dict
+from enum import Enum
+from typing import Dict, Optional, Union
 from urllib.parse import urlparse
 
 import tldextract
@@ -16,6 +19,37 @@ from src.features.url_features import (
     extract_length_features,
     extract_structure_features,
 )
+from src.features.email_features import parse_email, extract_email_header_features
+from src.features.text_features import TextFeatureExtractor
+from src.features.sms_features import extract_sms_features as extract_sms_specific_features
+
+
+class ContentType(Enum):
+    """Content types supported by unified feature extraction."""
+    URL = "url"
+    EMAIL = "email"
+    EMAIL_FILE = "email_file"  # .eml bytes
+    SMS = "sms"
+
+
+# Module-level extractor - loads spaCy model once
+_text_extractor: Optional[TextFeatureExtractor] = None
+
+
+def get_text_extractor() -> TextFeatureExtractor:
+    """Get or create singleton TextFeatureExtractor.
+
+    Loads the spaCy model once and reuses across all text extractions.
+    This is significantly more efficient than creating a new extractor
+    for each email or SMS message.
+
+    Returns:
+        Singleton TextFeatureExtractor instance
+    """
+    global _text_extractor
+    if _text_extractor is None:
+        _text_extractor = TextFeatureExtractor()
+    return _text_extractor
 
 
 def extract_url_features(url: str) -> Dict[str, float]:
@@ -95,6 +129,257 @@ def extract_url_features(url: str) -> Dict[str, float]:
     features.update(extract_structure_features(url, parsed, extracted))
 
     # Total: 30 features
+    return features
+
+
+def extract_email_features(raw_email: bytes) -> Dict[str, float]:
+    """Extract combined header and text features from email.
+
+    Combines email-specific header features (~15) with NLP text features (~50)
+    from the email body. Text features are prefixed with "text_" to distinguish
+    them from header features.
+
+    Args:
+        raw_email: Raw email bytes (from .eml file or SMTP)
+
+    Returns:
+        Dictionary with ~65 features:
+            - 15 email header features (authentication, sender, subject, structure)
+            - 50 text features prefixed with "text_" (lexical, syntactic, stylometric, sentiment)
+
+    Examples:
+        >>> email = b"From: phisher@evil.tk\\nSubject: URGENT ACTION REQUIRED\\n\\nVerify now!"
+        >>> features = extract_email_features(email)
+        >>> features['has_suspicious_sender_tld']
+        1
+        >>> features['text_has_urgency']
+        1
+        >>> len(features)
+        65
+    """
+    if not raw_email:
+        # Return default header features + default text features
+        header_features = extract_email_header_features({})
+        text_extractor = get_text_extractor()
+        text_features = text_extractor.extract_all_features("")
+        # Prefix text features
+        text_features_prefixed = {f"text_{k}": v for k, v in text_features.items()}
+        return {**header_features, **text_features_prefixed}
+
+    try:
+        # Parse email
+        parsed = parse_email(raw_email)
+
+        # Extract header features
+        header_features = extract_email_header_features(parsed['headers'])
+
+        # Extract text features from body
+        text_extractor = get_text_extractor()
+        text_features = text_extractor.extract_all_features(parsed['body'])
+
+        # Prefix text features to distinguish from header features
+        text_features_prefixed = {f"text_{k}": v for k, v in text_features.items()}
+
+        # Combine both feature sets
+        return {**header_features, **text_features_prefixed}
+
+    except Exception:
+        # On parse failure, return defaults
+        header_features = extract_email_header_features({})
+        text_extractor = get_text_extractor()
+        text_features = text_extractor.extract_all_features("")
+        text_features_prefixed = {f"text_{k}": v for k, v in text_features.items()}
+        return {**header_features, **text_features_prefixed}
+
+
+def extract_sms_features(message: str) -> Dict[str, float]:
+    """Extract combined SMS-specific and text features from SMS message.
+
+    Combines SMS-specific features (~20) with NLP text features (~50) from the
+    message text. Text features are prefixed with "text_" to distinguish them
+    from SMS-specific features.
+
+    Args:
+        message: SMS message text to analyze
+
+    Returns:
+        Dictionary with ~70 features:
+            - 20 SMS-specific features (length, URL, phone, character, patterns)
+            - 50 text features prefixed with "text_" (lexical, syntactic, stylometric, sentiment)
+
+    Examples:
+        >>> sms = "URGENT: Account locked. Click bit.ly/verify123 to unlock!"
+        >>> features = extract_sms_features(sms)
+        >>> features['has_shortened_url']
+        1
+        >>> features['urgency_caps_count']
+        1
+        >>> features['text_has_urgency']
+        1
+        >>> len(features)
+        70
+    """
+    if not message:
+        # Return default SMS features + default text features
+        sms_features = extract_sms_specific_features("")
+        text_extractor = get_text_extractor()
+        text_features = text_extractor.extract_all_features("")
+        # Prefix text features
+        text_features_prefixed = {f"text_{k}": v for k, v in text_features.items()}
+        return {**sms_features, **text_features_prefixed}
+
+    try:
+        # Extract SMS-specific features
+        sms_features = extract_sms_specific_features(message)
+
+        # Extract text features from message
+        text_extractor = get_text_extractor()
+        text_features = text_extractor.extract_all_features(message)
+
+        # Prefix text features to distinguish from SMS features
+        text_features_prefixed = {f"text_{k}": v for k, v in text_features.items()}
+
+        # Combine both feature sets
+        return {**sms_features, **text_features_prefixed}
+
+    except Exception:
+        # On extraction failure, return defaults
+        sms_features = extract_sms_specific_features("")
+        text_extractor = get_text_extractor()
+        text_features = text_extractor.extract_all_features("")
+        text_features_prefixed = {f"text_{k}": v for k, v in text_features.items()}
+        return {**sms_features, **text_features_prefixed}
+
+
+def detect_content_type(content: Union[str, bytes]) -> ContentType:
+    """Auto-detect content type from input.
+
+    Analyzes the content to determine if it's a URL, email, or SMS message.
+    Uses pattern matching on common headers and URL schemes.
+
+    Args:
+        content: Input content (string or bytes)
+
+    Returns:
+        ContentType enum value (URL, EMAIL, EMAIL_FILE, or SMS)
+
+    Examples:
+        >>> detect_content_type("https://example.com")
+        <ContentType.URL: 'url'>
+        >>> detect_content_type(b"From: test@example.com\\nSubject: Test")
+        <ContentType.EMAIL_FILE: 'email_file'>
+        >>> detect_content_type("From: test@example.com\\nSubject: Test")
+        <ContentType.EMAIL: 'email'>
+        >>> detect_content_type("Hello world")
+        <ContentType.SMS: 'sms'>
+    """
+    if isinstance(content, bytes):
+        # Check for email headers in bytes
+        content_lower = content.lower()
+        if (b'from:' in content_lower or
+            b'subject:' in content_lower or
+            b'mime-version:' in content_lower):
+            return ContentType.EMAIL_FILE
+        # If bytes but not email, convert to string for further checks
+        try:
+            content = content.decode('utf-8', errors='ignore')
+        except Exception:
+            return ContentType.SMS  # Default to SMS for unknown bytes
+
+    # Now content is a string
+    content_stripped = content.strip()
+
+    # Check for URL (starts with http:// or https://)
+    if content_stripped.startswith(('http://', 'https://')):
+        return ContentType.URL
+
+    # Check for email-like text (has email headers)
+    content_lower = content.lower()
+    if ('from:' in content_lower or
+        'subject:' in content_lower or
+        'to:' in content_lower):
+        return ContentType.EMAIL
+
+    # Default to SMS for plain text
+    return ContentType.SMS
+
+
+def extract_features(content: Union[str, bytes],
+                     content_type: Optional[ContentType] = None) -> Dict[str, float]:
+    """Unified feature extraction interface for all content types.
+
+    Main entry point for feature extraction. Auto-detects content type if not
+    specified, then routes to the appropriate extractor. Adds a content_type
+    feature to help models distinguish between input types.
+
+    Args:
+        content: Input content (URL string, email bytes/string, or SMS string)
+        content_type: Optional ContentType enum to skip auto-detection
+
+    Returns:
+        Dictionary of numeric features. Feature count varies by content type:
+            - URL: ~30 features
+            - EMAIL: ~65 features (15 header + 50 text)
+            - SMS: ~70 features (20 SMS-specific + 50 text)
+        All feature dicts include a "content_type" feature:
+            - 0 = URL
+            - 1 = EMAIL
+            - 2 = SMS
+
+    Examples:
+        >>> # Auto-detect URL
+        >>> features = extract_features("https://phishing.tk/login")
+        >>> features['content_type']
+        0
+        >>> features['has_suspicious_tld']
+        1
+
+        >>> # Extract email features
+        >>> email_bytes = b"From: test@evil.tk\\nSubject: URGENT\\n\\nVerify now!"
+        >>> features = extract_features(email_bytes)
+        >>> features['content_type']
+        1
+        >>> features['has_suspicious_sender_tld']
+        1
+
+        >>> # Extract SMS features with explicit type
+        >>> from src.features.extractors import ContentType
+        >>> features = extract_features("URGENT: Click bit.ly/abc", ContentType.SMS)
+        >>> features['content_type']
+        2
+        >>> features['has_shortened_url']
+        1
+    """
+    # Auto-detect if not specified
+    if content_type is None:
+        content_type = detect_content_type(content)
+
+    # Route to appropriate extractor
+    if content_type == ContentType.URL:
+        features = extract_url_features(content if isinstance(content, str) else content.decode('utf-8', errors='ignore'))
+        features['content_type'] = 0
+
+    elif content_type in (ContentType.EMAIL, ContentType.EMAIL_FILE):
+        # Convert string emails to bytes if needed
+        if isinstance(content, str):
+            content = content.encode('utf-8')
+        features = extract_email_features(content)
+        features['content_type'] = 1
+
+    elif content_type == ContentType.SMS:
+        # Convert bytes to string if needed
+        if isinstance(content, bytes):
+            content = content.decode('utf-8', errors='ignore')
+        features = extract_sms_features(content)
+        features['content_type'] = 2
+
+    else:
+        # Fallback to SMS for unknown types
+        if isinstance(content, bytes):
+            content = content.decode('utf-8', errors='ignore')
+        features = extract_sms_features(content)
+        features['content_type'] = 2
+
     return features
 
 
