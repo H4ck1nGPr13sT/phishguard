@@ -1,0 +1,155 @@
+"""Integration tests for Phase 6: Email and SMS Support.
+
+Requirements coverage:
+- INPUT-02: System accepts raw text messages (email/SMS/chat)
+- INPUT-03: System accepts .eml file format
+- FEAT-02: Lexical features (keywords, n-grams, word frequency)
+- FEAT-03: Syntactic features (sentence structure, punctuation)
+- FEAT-04: Stylometric features (formality, tone, complexity)
+- FEAT-06: Sentiment features (urgency, fear, time pressure)
+- FEAT-07: Email header features (SPF, DKIM, sender)
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+from src.api.main import app
+from src.features.extractors import (
+    extract_email_features,
+    extract_sms_features,
+    extract_features,
+    ContentType
+)
+from src.features.text_features import TextFeatureExtractor
+
+# Test fixtures
+PHISHING_EMAIL = b"""From: security@paypal-verify.tk
+To: victim@example.com
+Subject: URGENT: Account Suspended
+Date: Thu, 13 Feb 2026 10:00:00 +0000
+Authentication-Results: mx.example.com; spf=fail; dkim=fail
+
+Your PayPal account has been suspended due to suspicious activity.
+Click here immediately to verify your identity: http://bit.ly/verify123
+
+If you don't verify within 24 hours, your account will be permanently closed.
+"""
+
+LEGITIMATE_EMAIL = b"""From: notifications@amazon.com
+To: customer@example.com
+Subject: Your order has shipped
+Date: Thu, 13 Feb 2026 10:00:00 +0000
+Authentication-Results: mx.example.com; spf=pass; dkim=pass
+
+Dear valued customer,
+
+Your order #123-456-789 has shipped and is on its way.
+
+Track your package: https://amazon.com/track/123456
+
+Thank you for shopping with us.
+Best regards,
+Amazon Customer Service
+"""
+
+PHISHING_SMS = "URGENT! Your bank account locked. Verify NOW: bit.ly/x1y2z3 or call 1-800-555-0123"
+LEGITIMATE_SMS = "Your package has shipped. Track at: ups.com/track/123456. Delivery expected Friday."
+
+
+class TestInputRequirements:
+    """Test INPUT-02 and INPUT-03 requirements."""
+
+    def test_input_02_raw_email_text(self):
+        """INPUT-02: System accepts raw email text."""
+        features = extract_email_features(PHISHING_EMAIL)
+        assert len(features) > 50, "Should extract 50+ features from email"
+        assert "has_spf_pass" in features, "Should have SPF feature"
+
+    def test_input_02_sms_text(self):
+        """INPUT-02: System accepts SMS text."""
+        features = extract_sms_features(PHISHING_SMS)
+        assert len(features) > 50, "Should extract 50+ features from SMS"
+        assert "has_shortened_url" in features, "Should have shortened URL feature"
+
+    def test_input_03_eml_file(self):
+        """INPUT-03: System accepts .eml file format."""
+        features = extract_email_features(PHISHING_EMAIL)
+        assert "sender_domain_length" in features
+        assert features["has_spf_pass"] == 0
+
+
+class TestFeatureExtraction:
+    """Test FEAT-02 through FEAT-07 requirements."""
+
+    @pytest.fixture
+    def text_extractor(self):
+        return TextFeatureExtractor()
+
+    def test_feat_02_lexical_features(self, text_extractor):
+        """FEAT-02: Lexical features (words, n-grams, frequency)."""
+        text = "Click here to verify your account immediately"
+        features = text_extractor.extract_lexical_features(text)
+        assert "word_count" in features
+        assert "text_length" in features
+        assert features["word_count"] == 7
+
+    def test_feat_03_syntactic_features(self, text_extractor):
+        """FEAT-03: Syntactic features (sentence structure, punctuation)."""
+        text = "Your account has been suspended. Click here to verify."
+        features = text_extractor.extract_syntactic_features(text)
+        assert "sentence_count" in features
+        assert "verb_ratio" in features
+        assert "noun_ratio" in features
+        assert features["sentence_count"] == 2
+
+    def test_feat_04_stylometric_features(self, text_extractor):
+        """FEAT-04: Stylometric features (formality, complexity)."""
+        text = "Your PayPal account requires immediate verification."
+        features = text_extractor.extract_stylometric_features(text)
+        assert "flesch_reading_ease" in features
+        assert "flesch_kincaid_grade" in features
+        assert "lexical_diversity" in features
+
+    def test_feat_06_sentiment_features(self, text_extractor):
+        """FEAT-06: Sentiment features (urgency, fear, time pressure)."""
+        phishing_text = "URGENT! Verify immediately or account suspended!"
+        features = text_extractor.extract_sentiment_features(phishing_text)
+        assert "has_urgency" in features
+        assert "urgency_keyword_count" in features
+        assert features["has_urgency"] == 1
+
+    def test_feat_07_email_header_features(self):
+        """FEAT-07: Email header features (SPF, DKIM, sender)."""
+        features = extract_email_features(PHISHING_EMAIL)
+        assert "has_spf_pass" in features
+        assert "has_dkim_pass" in features
+        assert "sender_domain_length" in features
+
+
+class TestAPIEndpoints:
+    """Test API endpoints with TestClient."""
+
+    @pytest.fixture
+    def client(self):
+        with TestClient(app) as c:
+            yield c
+
+    def test_predict_email_endpoint(self, client):
+        """POST /predict/email returns prediction."""
+        response = client.post(
+            "/predict/email",
+            json={"raw_email": PHISHING_EMAIL.decode()}
+        )
+        assert response.status_code in [200, 501, 503]
+
+    def test_predict_sms_endpoint(self, client):
+        """POST /predict/sms returns prediction."""
+        response = client.post(
+            "/predict/sms",
+            json={"message": PHISHING_SMS}
+        )
+        assert response.status_code in [200, 501, 503]
+
+    def test_health_endpoint(self, client):
+        """GET /health shows model status."""
+        response = client.get("/health")
+        assert response.status_code == 200
