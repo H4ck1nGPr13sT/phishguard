@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 6 of 10 (Email/SMS Support)
-Plan: 4 of 7 in current phase
+Plan: 5 of 7 in current phase
 Status: In progress
-Last activity: 2026-02-16 — Completed 06-04-PLAN.md (Unified Feature Extraction)
+Last activity: 2026-02-16 — Completed 06-05-PLAN.md (Email/SMS API Endpoints)
 
-Progress: [████████████████████████░░] 90%
+Progress: [█████████████████████████░] 93%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28
-- Average duration: 32 min
-- Total execution time: 15 hours 31 min
+- Total plans completed: 29
+- Average duration: 31 min
+- Total execution time: 15 hours 37 min
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [███████████████████████
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
 | 05-alternative-detection-paradigms | 5 | 29 min | 6 min |
-| 06-email-sms-support | 4 | 24 min | 6 min |
+| 06-email-sms-support | 5 | 30 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-05 (15 min), 06-03 (4 min), 06-01 (6 min), 06-02 (10 min), 06-04 (4 min)
-- Note: Phase 06 in progress - email header, NLP text, SMS features, unified extraction delivered (4 of 7 plans)
+- Last 5 plans: 06-03 (4 min), 06-01 (6 min), 06-02 (10 min), 06-04 (4 min), 06-05 (6 min)
+- Note: Phase 06 in progress - email header, NLP text, SMS features, unified extraction, API endpoints delivered (5 of 7 plans)
 
 *Updated after each plan completion*
 
@@ -287,11 +287,19 @@ Recent decisions affecting current work:
 - ContentType enum (URL, EMAIL, EMAIL_FILE, SMS) for explicit type routing
 - Email extraction combines ~15 header + ~50 text features = ~65 total
 - SMS extraction combines ~20 SMS-specific + ~50 text features = ~70 total
-- TextFeatureExtractor singleton loads spaCy model once per process (not per extraction)
-- Text features prefixed with "text_" to distinguish from domain-specific features (email header, SMS patterns)
-- Auto-detection defaults plain text to SMS (most common case for short messages)
-- Content type feature added (0=URL, 1=EMAIL, 2=SMS) for model awareness of input type
-- 20 integration tests validate routing, combination, singleton behavior, and edge cases (all pass in 1.81s)
+- Module-level TextFeatureExtractor singleton via get_text_extractor() - spaCy model loaded once
+- Feature prefixing pattern: text features prefixed with "text_" when combined with domain-specific features
+- 16 integration tests validate unified extraction across all content types (100% pass rate)
+
+**From 06-05 (2026-02-16):**
+- POST /predict/email, /predict/email/file, /predict/sms REST API endpoints for email/SMS phishing detection
+- FastAPI UploadFile for .eml file handling with 5MB size limit and extension validation
+- EmailSMSResponse with optional paradigm_contributions for future multi-paradigm integration
+- Feature count validation before prediction - returns HTTP 501 Not Implemented when features don't match trained models
+- Current models trained on 30 URL features, but email has 65+ and SMS has 70+ features
+- Endpoints return 501 with clear error message until models retrained (Plan 06-06)
+- API version 3.0.0 indicates Phase 6 email/SMS support capability
+- 21 API tests: 8 passed (validation), 13 skipped (prediction blocked on model retraining)
 
 ### Pending Todos
 
@@ -315,9 +323,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 06-04-PLAN.md (Unified Feature Extraction)
+Stopped at: Completed 06-05-PLAN.md (Email/SMS API Endpoints)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-16 (after 06-04)*
+*Last updated: 2026-02-16 (after 06-05)*
