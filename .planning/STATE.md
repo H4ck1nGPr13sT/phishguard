@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 6 of 10 (Email/SMS Support)
-Plan: 2 of 7 in current phase
+Plan: 3 of 7 in current phase
 Status: In progress
-Last activity: 2026-02-16 — Completed 06-01-PLAN.md (Email Header Feature Extraction)
+Last activity: 2026-02-16 — Completed 06-02-PLAN.md (NLP Text Feature Extraction)
 
-Progress: [█████████████████████░░░░░] 84%
+Progress: [██████████████████████░░░░] 87%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
-- Average duration: 36 min
-- Total execution time: 15 hours 17 min
+- Total plans completed: 27
+- Average duration: 34 min
+- Total execution time: 15 hours 27 min
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [█████████████████████░░
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
 | 05-alternative-detection-paradigms | 5 | 29 min | 6 min |
-| 06-email-sms-support | 2 | 10 min | 5 min |
+| 06-email-sms-support | 3 | 20 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-03 (4 min), 05-04 (3 min), 05-05 (15 min), 06-03 (4 min), 06-01 (6 min)
-- Note: Phase 06 in progress - email header and SMS feature extraction delivered (2 of 7 plans)
+- Last 5 plans: 05-04 (3 min), 05-05 (15 min), 06-03 (4 min), 06-01 (6 min), 06-02 (10 min)
+- Note: Phase 06 in progress - email header, NLP text features, SMS features delivered (3 of 7 plans)
 
 *Updated after each plan completion*
 
@@ -269,6 +269,19 @@ Recent decisions affecting current work:
 - 24 comprehensive unit tests across 5 test classes (all passing in <0.05s)
 - No duplication of NLP features - SMS features focus on message-specific patterns only
 
+**From 06-02 (2026-02-16):**
+- NLP text feature extraction with spaCy 3.8.11 and textstat 0.7.12
+- 50 features total: lexical (15), syntactic (15), stylometric (10), sentiment (10)
+- Lexical: word counts, character distributions, URL/email/phone patterns
+- Syntactic: POS tag ratios via spaCy, sentence structure, imperative verb detection
+- Stylometric: readability scores (Flesch, Gunning Fog), lexical diversity, syllable counts
+- Sentiment: urgency/threat/action/reward keyword detection for phishing-specific patterns
+- spaCy en_core_web_sm model (15MB) chosen over larger models - sufficient for POS tagging
+- NER disabled in spaCy for processing speed (not needed for feature extraction)
+- No stop words filtering - words like "urgent", "your", "now" are phishing indicators per research
+- TextFeatureExtractor class pattern matches url_features.py design for consistency
+- 36 comprehensive unit tests covering all feature categories (100% pass rate in 6.86s)
+
 ### Pending Todos
 
 None yet.
@@ -291,9 +304,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 06-01-PLAN.md (Email Header Feature Extraction)
+Stopped at: Completed 06-02-PLAN.md (NLP Text Feature Extraction)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-16 (after 06-01)*
+*Last updated: 2026-02-16 (after 06-02)*
