@@ -9,7 +9,8 @@ Endpoints:
 
 import time
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from typing import Annotated
 
 from src.api.models import (
     URLRequest,
@@ -24,8 +25,11 @@ from src.api.models import (
     ParadigmContribution,
     ParadigmContributions,
     ParadigmDisagreementInfo,
+    EmailTextRequest,
+    SMSRequest,
+    EmailSMSResponse,
 )
-from src.features.extractors import extract_url_features
+from src.features.extractors import extract_url_features, extract_email_features, extract_sms_features, ContentType
 from src.api.main import ml_models
 from src.models.ensemble import get_individual_predictions
 from src.models.disagreement import get_disagreement_summary
@@ -38,8 +42,17 @@ def root():
     """Root endpoint with API information."""
     return {
         "service": "PhishGuard API",
-        "version": "2.0.0",
-        "endpoints": ["/predict", "/predict/ensemble", "/predict/multi-paradigm", "/health", "/docs"],
+        "version": "3.0.0",  # Updated for Phase 6 - Email/SMS support
+        "endpoints": [
+            "/predict",
+            "/predict/ensemble",
+            "/predict/multi-paradigm",
+            "/predict/email",
+            "/predict/email/file",
+            "/predict/sms",
+            "/health",
+            "/docs"
+        ],
     }
 
 
@@ -273,3 +286,195 @@ def predict_multi_paradigm(request: URLRequest):
             status_code=500,
             detail=f"Multi-paradigm prediction failed: {str(e)}"
         )
+
+
+@router.post("/predict/email", response_model=EmailSMSResponse, tags=["prediction"])
+def predict_email(request: EmailTextRequest):
+    """
+    Predict phishing probability for raw email text.
+
+    Extracts header features (SPF, DKIM, sender) and text features (NLP).
+    Currently uses ensemble model directly (full multi-paradigm integration
+    comes after model retraining in Plan 06).
+
+    Requirements addressed:
+    - INPUT-02: Accepts raw email/SMS text
+    - FEAT-07: Extracts email header features
+
+    NOTE: Using sync 'def' not 'async def' because ML inference
+    is CPU-bound, not I/O-bound. FastAPI runs sync functions
+    in threadpool automatically.
+    """
+    start_time = time.time()
+
+    # Verify models loaded
+    if "voting_soft" not in ml_models:
+        raise HTTPException(status_code=503, detail="Models not loaded")
+
+    try:
+        # Extract features from email text
+        # Convert string to bytes for email parser
+        raw_bytes = request.raw_email.encode('utf-8')
+        features = extract_email_features(raw_bytes)
+        feature_array = np.array([list(features.values())])
+
+        # Get prediction using ensemble model
+        ensemble = ml_models["voting_soft"]
+        proba = ensemble.predict_proba(feature_array)[0]
+        phishing_prob = float(proba[1])
+        prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
+        confidence = float(max(proba))
+
+        processing_time = (time.time() - start_time) * 1000
+
+        # Build explanation
+        explanation = f"Email analyzed with {len(features)} features. "
+        if confidence > 0.9:
+            explanation += f"High confidence {prediction} ({confidence:.1%})."
+        elif confidence > 0.7:
+            explanation += f"Moderate confidence {prediction} ({confidence:.1%})."
+        else:
+            explanation += f"Low confidence {prediction} ({confidence:.1%}). Consider manual review."
+
+        return EmailSMSResponse(
+            content_type="email",
+            final_prediction=prediction,
+            final_probability=phishing_prob,
+            confidence=confidence,
+            feature_count=len(features),
+            paradigm_contributions=None,  # Not using multi-paradigm yet
+            active_rules=[],
+            explanation=explanation,
+            processing_time_ms=processing_time
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Email prediction failed: {str(e)}")
+
+
+@router.post("/predict/email/file", response_model=EmailSMSResponse, tags=["prediction"])
+async def predict_email_file(
+    file: Annotated[UploadFile, File(description="Email file in .eml format")]
+):
+    """
+    Predict phishing probability for uploaded .eml file.
+
+    Accepts .eml file upload, parses email content, extracts features.
+    Currently uses ensemble model directly (full multi-paradigm integration
+    comes after model retraining in Plan 06).
+
+    Requirements addressed:
+    - INPUT-03: Accepts .eml file upload
+
+    NOTE: Using async def for file upload I/O, but ML inference
+    runs in threadpool automatically.
+    """
+    start_time = time.time()
+
+    # Validate file type
+    if file.filename and not file.filename.endswith('.eml'):
+        raise HTTPException(status_code=400, detail="File must be .eml format")
+
+    # Size limit: 5MB
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+
+    # Verify models loaded
+    if "voting_soft" not in ml_models:
+        raise HTTPException(status_code=503, detail="Models not loaded")
+
+    try:
+        # Extract features from email bytes
+        features = extract_email_features(contents)
+        feature_array = np.array([list(features.values())])
+
+        # Get prediction using ensemble model
+        ensemble = ml_models["voting_soft"]
+        proba = ensemble.predict_proba(feature_array)[0]
+        phishing_prob = float(proba[1])
+        prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
+        confidence = float(max(proba))
+
+        processing_time = (time.time() - start_time) * 1000
+
+        # Build explanation
+        explanation = f"Email file analyzed with {len(features)} features. "
+        if confidence > 0.9:
+            explanation += f"High confidence {prediction} ({confidence:.1%})."
+        elif confidence > 0.7:
+            explanation += f"Moderate confidence {prediction} ({confidence:.1%})."
+        else:
+            explanation += f"Low confidence {prediction} ({confidence:.1%}). Consider manual review."
+
+        return EmailSMSResponse(
+            content_type="email",
+            final_prediction=prediction,
+            final_probability=phishing_prob,
+            confidence=confidence,
+            feature_count=len(features),
+            paradigm_contributions=None,  # Not using multi-paradigm yet
+            active_rules=[],
+            explanation=explanation,
+            processing_time_ms=processing_time
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Email file prediction failed: {str(e)}")
+
+
+@router.post("/predict/sms", response_model=EmailSMSResponse, tags=["prediction"])
+def predict_sms(request: SMSRequest):
+    """
+    Predict phishing probability for SMS/chat message.
+
+    Extracts SMS-specific features and NLP text features.
+    Currently uses ensemble model directly (full multi-paradigm integration
+    comes after model retraining in Plan 06).
+
+    Requirements addressed:
+    - INPUT-02: Accepts SMS/chat text
+
+    NOTE: Using sync 'def' not 'async def' because ML inference
+    is CPU-bound, not I/O-bound. FastAPI runs sync functions
+    in threadpool automatically.
+    """
+    start_time = time.time()
+
+    if "voting_soft" not in ml_models:
+        raise HTTPException(status_code=503, detail="Models not loaded")
+
+    try:
+        # Extract features from SMS message
+        features = extract_sms_features(request.message)
+        feature_array = np.array([list(features.values())])
+
+        # Get prediction using ensemble model
+        ensemble = ml_models["voting_soft"]
+        proba = ensemble.predict_proba(feature_array)[0]
+        phishing_prob = float(proba[1])
+        prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
+        confidence = float(max(proba))
+
+        processing_time = (time.time() - start_time) * 1000
+
+        # Build explanation
+        explanation = f"SMS message analyzed with {len(features)} features. "
+        if confidence > 0.9:
+            explanation += f"High confidence {prediction} ({confidence:.1%})."
+        elif confidence > 0.7:
+            explanation += f"Moderate confidence {prediction} ({confidence:.1%})."
+        else:
+            explanation += f"Low confidence {prediction} ({confidence:.1%}). Consider manual review."
+
+        return EmailSMSResponse(
+            content_type="sms",
+            final_prediction=prediction,
+            final_probability=phishing_prob,
+            confidence=confidence,
+            feature_count=len(features),
+            paradigm_contributions=None,  # Not using multi-paradigm yet
+            active_rules=[],
+            explanation=explanation,
+            processing_time_ms=processing_time
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"SMS prediction failed: {str(e)}")
