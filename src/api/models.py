@@ -11,7 +11,7 @@ Models:
 """
 
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
 
 class URLRequest(BaseModel):
@@ -258,4 +258,71 @@ class MultiParadigmResponse(BaseModel):
     )
     processing_time_ms: float = Field(
         ..., description="Total processing time in milliseconds"
+    )
+
+
+class EmailTextRequest(BaseModel):
+    """Request model for raw email text prediction."""
+
+    raw_email: str = Field(
+        ...,
+        description="Raw email content including headers and body",
+        examples=["From: sender@example.com\nSubject: Test\n\nEmail body here."],
+        min_length=10,
+        max_length=500000  # 500KB text limit
+    )
+
+    @field_validator("raw_email")
+    def validate_email_format(cls, v):
+        """Basic validation that content looks like email."""
+        # Should have at least one header-like pattern
+        if not any(header in v for header in ["From:", "Subject:", "To:", "Date:"]):
+            raise ValueError("Content doesn't appear to be email format (missing headers)")
+        return v
+
+
+class SMSRequest(BaseModel):
+    """Request model for SMS/chat message prediction."""
+
+    message: str = Field(
+        ...,
+        description="SMS or chat message text",
+        examples=["URGENT: Your account has been suspended. Click here to verify."],
+        min_length=1,
+        max_length=5000  # Allow for MMS/longer messages
+    )
+
+
+class EmailSMSResponse(BaseModel):
+    """Response model for email/SMS prediction.
+
+    Similar to MultiParadigmResponse but adapted for email/SMS input.
+    """
+
+    content_type: Literal["email", "sms"] = Field(
+        ..., description="Type of content analyzed"
+    )
+    final_prediction: Literal["phishing", "legitimate"] = Field(
+        ..., description="Aggregated prediction"
+    )
+    final_probability: float = Field(
+        ..., ge=0.0, le=1.0, description="Phishing probability"
+    )
+    confidence: float = Field(
+        ..., ge=0.5, le=1.0, description="Prediction confidence"
+    )
+    feature_count: int = Field(
+        ..., description="Number of features extracted"
+    )
+    paradigm_contributions: Optional[ParadigmContributions] = Field(
+        None, description="Paradigm contributions (if multi-paradigm enabled)"
+    )
+    active_rules: List[FiredRule] = Field(
+        default_factory=list, description="Fired rules from rule engine"
+    )
+    explanation: str = Field(
+        ..., description="Human-readable explanation"
+    )
+    processing_time_ms: float = Field(
+        ..., description="Processing time in milliseconds"
     )
