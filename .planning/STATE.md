@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 6 of 10 (Email/SMS Support)
-Plan: 3 of 7 in current phase
+Plan: 4 of 7 in current phase
 Status: In progress
-Last activity: 2026-02-16 — Completed 06-02-PLAN.md (NLP Text Feature Extraction)
+Last activity: 2026-02-16 — Completed 06-04-PLAN.md (Unified Feature Extraction)
 
-Progress: [██████████████████████░░░░] 87%
+Progress: [████████████████████████░░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 27
-- Average duration: 34 min
-- Total execution time: 15 hours 27 min
+- Total plans completed: 28
+- Average duration: 32 min
+- Total execution time: 15 hours 31 min
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [██████████████████████░
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
 | 05-alternative-detection-paradigms | 5 | 29 min | 6 min |
-| 06-email-sms-support | 3 | 20 min | 7 min |
+| 06-email-sms-support | 4 | 24 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-04 (3 min), 05-05 (15 min), 06-03 (4 min), 06-01 (6 min), 06-02 (10 min)
-- Note: Phase 06 in progress - email header, NLP text features, SMS features delivered (3 of 7 plans)
+- Last 5 plans: 05-05 (15 min), 06-03 (4 min), 06-01 (6 min), 06-02 (10 min), 06-04 (4 min)
+- Note: Phase 06 in progress - email header, NLP text, SMS features, unified extraction delivered (4 of 7 plans)
 
 *Updated after each plan completion*
 
@@ -282,6 +282,17 @@ Recent decisions affecting current work:
 - TextFeatureExtractor class pattern matches url_features.py design for consistency
 - 36 comprehensive unit tests covering all feature categories (100% pass rate in 6.86s)
 
+**From 06-04 (2026-02-16):**
+- Unified extract_features() interface handles URL, email, and SMS inputs with auto-detection
+- ContentType enum (URL, EMAIL, EMAIL_FILE, SMS) for explicit type routing
+- Email extraction combines ~15 header + ~50 text features = ~65 total
+- SMS extraction combines ~20 SMS-specific + ~50 text features = ~70 total
+- TextFeatureExtractor singleton loads spaCy model once per process (not per extraction)
+- Text features prefixed with "text_" to distinguish from domain-specific features (email header, SMS patterns)
+- Auto-detection defaults plain text to SMS (most common case for short messages)
+- Content type feature added (0=URL, 1=EMAIL, 2=SMS) for model awareness of input type
+- 20 integration tests validate routing, combination, singleton behavior, and edge cases (all pass in 1.81s)
+
 ### Pending Todos
 
 None yet.
@@ -304,9 +315,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 06-02-PLAN.md (NLP Text Feature Extraction)
+Stopped at: Completed 06-04-PLAN.md (Unified Feature Extraction)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-16 (after 06-02)*
+*Last updated: 2026-02-16 (after 06-04)*
