@@ -318,8 +318,25 @@ def predict_email(request: EmailTextRequest):
         features = extract_email_features(raw_bytes)
         feature_array = np.array([list(features.values())])
 
-        # Get prediction using ensemble model
+        # Check feature count compatibility
+        # Current models are trained on 30 URL features
+        # Email/SMS features will be supported after model retraining (Plan 06-06)
         ensemble = ml_models["voting_soft"]
+        try:
+            expected_features = ensemble.named_steps['scaler'].n_features_in_
+        except AttributeError:
+            # Fallback if scaler doesn't have n_features_in_
+            expected_features = 30  # Known URL feature count
+
+        if len(features) != expected_features:
+            raise HTTPException(
+                status_code=501,
+                detail=f"Email prediction not yet supported. Models trained on {expected_features} "
+                       f"URL features but email has {len(features)} features. "
+                       f"Model retraining with email/SMS features scheduled for Plan 06-06."
+            )
+
+        # Get prediction using ensemble model
         proba = ensemble.predict_proba(feature_array)[0]
         phishing_prob = float(proba[1])
         prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
@@ -347,6 +364,8 @@ def predict_email(request: EmailTextRequest):
             explanation=explanation,
             processing_time_ms=processing_time
         )
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Email prediction failed: {str(e)}")
 
@@ -388,8 +407,25 @@ async def predict_email_file(
         features = extract_email_features(contents)
         feature_array = np.array([list(features.values())])
 
-        # Get prediction using ensemble model
+        # Check feature count compatibility
+        # Current models are trained on 30 URL features
+        # Email/SMS features will be supported after model retraining (Plan 06-06)
         ensemble = ml_models["voting_soft"]
+        try:
+            expected_features = ensemble.named_steps['scaler'].n_features_in_
+        except AttributeError:
+            # Fallback if scaler doesn't have n_features_in_
+            expected_features = 30  # Known URL feature count
+
+        if len(features) != expected_features:
+            raise HTTPException(
+                status_code=501,
+                detail=f"Email prediction not yet supported. Models trained on {expected_features} "
+                       f"URL features but email has {len(features)} features. "
+                       f"Model retraining with email/SMS features scheduled for Plan 06-06."
+            )
+
+        # Get prediction using ensemble model
         proba = ensemble.predict_proba(feature_array)[0]
         phishing_prob = float(proba[1])
         prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
@@ -417,6 +453,8 @@ async def predict_email_file(
             explanation=explanation,
             processing_time_ms=processing_time
         )
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Email file prediction failed: {str(e)}")
 
@@ -447,8 +485,25 @@ def predict_sms(request: SMSRequest):
         features = extract_sms_features(request.message)
         feature_array = np.array([list(features.values())])
 
-        # Get prediction using ensemble model
+        # Check feature count compatibility
+        # Current models are trained on 30 URL features
+        # Email/SMS features will be supported after model retraining (Plan 06-06)
         ensemble = ml_models["voting_soft"]
+        try:
+            expected_features = ensemble.named_steps['scaler'].n_features_in_
+        except AttributeError:
+            # Fallback if scaler doesn't have n_features_in_
+            expected_features = 30  # Known URL feature count
+
+        if len(features) != expected_features:
+            raise HTTPException(
+                status_code=501,
+                detail=f"SMS prediction not yet supported. Models trained on {expected_features} "
+                       f"URL features but SMS has {len(features)} features. "
+                       f"Model retraining with email/SMS features scheduled for Plan 06-06."
+            )
+
+        # Get prediction using ensemble model
         proba = ensemble.predict_proba(feature_array)[0]
         phishing_prob = float(proba[1])
         prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
@@ -476,5 +531,7 @@ def predict_sms(request: SMSRequest):
             explanation=explanation,
             processing_time_ms=processing_time
         )
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"SMS prediction failed: {str(e)}")
