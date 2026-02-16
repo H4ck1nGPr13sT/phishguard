@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 6 of 10 (Email/SMS Support)
-Plan: 3 of 7 in current phase
+Plan: 2 of 7 in current phase
 Status: In progress
-Last activity: 2026-02-16 — Completed 06-03-PLAN.md (SMS Feature Extraction)
+Last activity: 2026-02-16 — Completed 06-01-PLAN.md (Email Header Feature Extraction)
 
-Progress: [████████████████████░░░░░░] 80%
+Progress: [█████████████████████░░░░░] 84%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
-- Average duration: 37 min
-- Total execution time: 15 hours 11 min
+- Total plans completed: 26
+- Average duration: 36 min
+- Total execution time: 15 hours 17 min
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [████████████████████░░░
 | 03-ml-ensemble-expansion | 4 | 1h 9min | 17 min |
 | 04-genetic-algorithm-optimization | 6 | 1h 26min | 14 min |
 | 05-alternative-detection-paradigms | 5 | 29 min | 6 min |
-| 06-email-sms-support | 1 | 4 min | 4 min |
+| 06-email-sms-support | 2 | 10 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-02 (4 min), 05-03 (4 min), 05-04 (3 min), 05-05 (15 min), 06-03 (4 min)
-- Note: Phase 06 in progress - SMS feature extraction delivered (1 of 7 plans)
+- Last 5 plans: 05-03 (4 min), 05-04 (3 min), 05-05 (15 min), 06-03 (4 min), 06-01 (6 min)
+- Note: Phase 06 in progress - email header and SMS feature extraction delivered (2 of 7 plans)
 
 *Updated after each plan completion*
 
@@ -247,6 +247,17 @@ Recent decisions affecting current work:
 - Fixed voting_soft alias in API for registry-loaded ensemble compatibility
 - All 88 tests pass across Phase 5 test suites (22 rules + 18 integration + 11 bayesian + 20 aggregation + 12 API + 5 misc)
 
+**From 06-01 (2026-02-16):**
+- Email parsing module using stdlib email.message_from_bytes with RFC 5322 compliant policy.default
+- Extract authentication status from Authentication-Results header (faster than live DKIM verification, no DNS lookups)
+- 15 email header features: authentication (SPF/DKIM/DMARC), sender domain (length, suspicious TLD, Reply-To mismatch), subject (length, urgent keywords, Re:/Fwd: prefixes), structure (header count, X-headers, Received headers)
+- Multipart email handling prefers text/plain over text/html (same phishing indicators, faster parsing)
+- BeautifulSoup with lxml backend for HTML text extraction (robust, handles malformed HTML)
+- Suspicious TLDs: tk, ml, ga, cf, gq, xyz (commonly used in phishing)
+- Urgent keywords: urgent, important, action required, immediate, verify, suspend
+- 25 comprehensive unit tests covering all functions and edge cases (all passing in 0.64s)
+- Follows url_features.py pattern with default zero features for invalid/empty emails
+
 **From 06-03 (2026-02-16):**
 - SMS feature extraction module with 20 smishing-specific features
 - Four feature categories: length (4), URL (4), phone (2), character (4), patterns (6)
@@ -280,9 +291,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 06-03-PLAN.md (SMS Feature Extraction)
+Stopped at: Completed 06-01-PLAN.md (Email Header Feature Extraction)
 Resume file: None
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-16 (after 06-03)*
+*Last updated: 2026-02-16 (after 06-01)*
