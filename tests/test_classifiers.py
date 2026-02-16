@@ -125,9 +125,14 @@ class TestTrainedModels:
 
             # Load model
             model_data = joblib.load(path)
-            assert 'model' in model_data, f"{name} model data missing 'model' key"
 
-            model = model_data['model']
+            # Handle both dict format (with metadata) and direct Pipeline format
+            if isinstance(model_data, dict) and 'model' in model_data:
+                model = model_data['model']
+            else:
+                # Direct Pipeline format (from retraining or model registry)
+                model = model_data
+
             assert isinstance(model, Pipeline), f"{name} is not a Pipeline"
 
     def test_all_models_can_predict(self, model_files):
@@ -144,7 +149,11 @@ class TestTrainedModels:
 
         for name, path in model_files.items():
             model_data = joblib.load(path)
-            model = model_data['model']
+            # Handle both dict format and direct Pipeline format
+            if isinstance(model_data, dict) and 'model' in model_data:
+                model = model_data['model']
+            else:
+                model = model_data
 
             # Test predict_proba
             proba = model.predict_proba(sample_input)
@@ -237,7 +246,11 @@ class TestClassifierAccuracy:
             # Load saved model
             model_path = models_dir / f"{name}_pipeline.joblib"
             model_data = joblib.load(model_path)
-            loaded_model = model_data['model']
+            # Handle both dict format and direct Pipeline format
+            if isinstance(model_data, dict) and 'model' in model_data:
+                loaded_model = model_data['model']
+            else:
+                loaded_model = model_data
 
             # Get predictions from loaded model
             loaded_pred = loaded_model.predict(sample_input)

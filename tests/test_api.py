@@ -77,7 +77,7 @@ class TestRootEndpoint:
         response = client.get("/")
         data = response.json()
         assert data["service"] == "PhishGuard API"
-        assert data["version"] == "1.0.0"
+        assert data["version"] == "3.0.0"  # Phase 6: Email/SMS support
         assert "endpoints" in data
         assert "/predict" in data["endpoints"]
 
