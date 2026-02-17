@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 ## Current Position
 
 Phase: 6 of 10 (Email/SMS Support)
-Plan: 6 of 7 in current phase
-Status: In progress
-Last activity: 2026-02-16 — Completed 06-06-PLAN.md (Email/SMS Model Retraining)
+Plan: 7 of 7 in current phase
+Status: CHECKPOINT - awaiting human verification
+Last activity: 2026-02-16 — Plan 06-07 checkpoint reached (Task 3: Human Verification)
 
-Progress: [█████████████████████████░] 97%
+Progress: [█████████████████████████░] 98%
 
 ## Performance Metrics
 
@@ -334,9 +334,39 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 06-06-PLAN.md (Email/SMS Model Retraining)
+Stopped at: Plan 06-07 Task 3 checkpoint (Human Verification)
 Resume file: None
+
+### Resume Instructions
+
+To resume Phase 6 execution:
+
+1. Start the API server:
+   ```bash
+   cd /Users/lukaszdrazek/Inzynierka
+   uvicorn src.api.main:app --reload
+   ```
+
+2. Open Swagger UI: http://localhost:8000/docs
+
+3. Verify endpoints work:
+   - POST /predict/email with phishing email
+   - POST /predict/sms with smishing text
+   - GET /health shows email_model_loaded=true, sms_model_loaded=true
+
+4. After verification, run:
+   ```
+   /gsd:execute-phase 6
+   ```
+   And type "approved" when prompted (or describe issues)
+
+**Completed in this session:**
+- Wave 1: 06-01 (email parser), 06-02 (NLP text), 06-03 (SMS features)
+- Wave 2: 06-04 (unified extractor), 06-05 (API endpoints)
+- Wave 3: 06-06 (model retraining), 06-07 tasks 1-2 (integration tests)
+
+**Pending:** 06-07 Task 3 - Human verification via Swagger UI
 
 ---
 *State initialized: 2026-02-09*
-*Last updated: 2026-02-16 (after 06-06)*
+*Last updated: 2026-02-16 (after 06-07 checkpoint)*
