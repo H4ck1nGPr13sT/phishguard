@@ -8,8 +8,8 @@
 ### Data Input (INPUT)
 
 - [ ] **INPUT-01**: System przyjmuje URL do analizy przez formularz webowy
-- [ ] **INPUT-02**: System przyjmuje surowy tekst wiadomości (e-mail/SMS/chat)
-- [ ] **INPUT-03**: System przyjmuje plik e-mail w formacie .eml
+- [x] **INPUT-02**: System przyjmuje surowy tekst wiadomości (e-mail/SMS/chat)
+- [x] **INPUT-03**: System przyjmuje plik e-mail w formacie .eml
 - [ ] **INPUT-04**: System przyjmuje obraz do analizy (PNG, JPG, screenshot)
 - [ ] **INPUT-05**: System przyjmuje plik CSV do analizy batch wielu próbek
 - [ ] **INPUT-06**: System ekstrahuje tekst z obrazów poprzez OCR (EasyOCR)
@@ -18,12 +18,12 @@
 ### Feature Extraction (FEAT)
 
 - [ ] **FEAT-01**: System ekstrahuje cechy długościowe (długość tekstu, liczba słów, średnia długość słowa)
-- [ ] **FEAT-02**: System ekstrahuje cechy leksykalne (słowa kluczowe, n-gramy, częstość słów)
-- [ ] **FEAT-03**: System ekstrahuje cechy składniowe (struktura zdań, interpunkcja)
-- [ ] **FEAT-04**: System ekstrahuje cechy stylometryczne (formalność, ton, złożoność)
+- [x] **FEAT-02**: System ekstrahuje cechy leksykalne (słowa kluczowe, n-gramy, częstość słów)
+- [x] **FEAT-03**: System ekstrahuje cechy składniowe (struktura zdań, interpunkcja)
+- [x] **FEAT-04**: System ekstrahuje cechy stylometryczne (formalność, ton, złożoność)
 - [ ] **FEAT-05**: System ekstrahuje cechy URL (domena, długość, obecność IP, skrócone linki)
-- [ ] **FEAT-06**: System ekstrahuje cechy sentymentu (pilność, strach, presja czasowa)
-- [ ] **FEAT-07**: System ekstrahuje cechy nagłówków e-mail (SPF, DKIM, nadawca)
+- [x] **FEAT-06**: System ekstrahuje cechy sentymentu (pilność, strach, presja czasowa)
+- [x] **FEAT-07**: System ekstrahuje cechy nagłówków e-mail (SPF, DKIM, nadawca)
 - [ ] **FEAT-08**: System normalizuje i skaluje wszystkie cechy przed klasyfikacją
 
 ### ML Classifiers (ML)
@@ -165,19 +165,19 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INPUT-01 | Phase 2 | Pending |
-| INPUT-02 | Phase 6 | Pending |
-| INPUT-03 | Phase 6 | Pending |
+| INPUT-02 | Phase 6 | Complete |
+| INPUT-03 | Phase 6 | Complete |
 | INPUT-04 | Phase 7 | Pending |
 | INPUT-05 | Phase 8 | Pending |
 | INPUT-06 | Phase 7 | Pending |
 | INPUT-07 | Phase 7 | Pending |
 | FEAT-01 | Phase 2 | Pending |
-| FEAT-02 | Phase 6 | Pending |
-| FEAT-03 | Phase 6 | Pending |
-| FEAT-04 | Phase 6 | Pending |
+| FEAT-02 | Phase 6 | Complete |
+| FEAT-03 | Phase 6 | Complete |
+| FEAT-04 | Phase 6 | Complete |
 | FEAT-05 | Phase 2 | Pending |
-| FEAT-06 | Phase 6 | Pending |
-| FEAT-07 | Phase 6 | Pending |
+| FEAT-06 | Phase 6 | Complete |
+| FEAT-07 | Phase 6 | Complete |
 | FEAT-08 | Phase 2 | Pending |
 | ML-01 | Phase 2 | Pending |
 | ML-02 | Phase 3 | Pending |

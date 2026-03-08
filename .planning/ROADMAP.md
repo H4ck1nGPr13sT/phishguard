@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: ML Ensemble Expansion** - 7-classifier ensemble with voting and disagreement detection ✓ 2026-02-11
 - [x] **Phase 4: Genetic Algorithm Optimization** - Hyperparameter tuning and model versioning ✓ 2026-02-12
 - [x] **Phase 5: Alternative Detection Paradigms** - Rule-based expert system and Bayesian probabilistic analysis ✓ 2026-02-13
-- [ ] **Phase 6: Email & SMS Support** - Expand input types with NLP feature extraction
+- [x] **Phase 6: Email & SMS Support** - Expand input types with NLP feature extraction ✓ 2026-02-17
 - [ ] **Phase 7: OCR & Visual Analysis** - Image-based phishing detection with text extraction
 - [ ] **Phase 8: Batch Processing & Web Interface** - User-facing web application and CSV batch analysis
 - [ ] **Phase 9: Explainability & Dashboard** - SHAP/LIME explanations and multi-classifier comparison UI
@@ -156,13 +156,13 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Email parser and header feature extraction
-- [ ] 06-02-PLAN.md — NLP text feature extraction (spaCy, textstat)
-- [ ] 06-03-PLAN.md — SMS feature extraction with shortened URL detection
-- [ ] 06-04-PLAN.md — Unified feature extractor integration
-- [ ] 06-05-PLAN.md — API endpoints for email and SMS prediction
-- [ ] 06-06-PLAN.md — Model retraining with expanded features
-- [ ] 06-07-PLAN.md — Testing and human verification
+- [x] 06-01-PLAN.md — Email parser and header feature extraction
+- [x] 06-02-PLAN.md — NLP text feature extraction (spaCy, textstat)
+- [x] 06-03-PLAN.md — SMS feature extraction with shortened URL detection
+- [x] 06-04-PLAN.md — Unified feature extractor integration
+- [x] 06-05-PLAN.md — API endpoints for email and SMS prediction
+- [x] 06-06-PLAN.md — Model retraining with expanded features
+- [x] 06-07-PLAN.md — Testing and human verification
 
 ### Phase 7: OCR & Visual Analysis
 **Goal**: Image-based phishing detection with OCR text extraction (EasyOCR) and visual similarity analysis for brand logo detection.
@@ -252,7 +252,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. ML Ensemble Expansion | 4/4 | ✓ Complete | 2026-02-11 |
 | 4. Genetic Algorithm Optimization | 6/6 | ✓ Complete | 2026-02-12 |
 | 5. Alternative Detection Paradigms | 5/5 | ✓ Complete | 2026-02-13 |
-| 6. Email & SMS Support | 0/7 | Planned | - |
+| 6. Email & SMS Support | 7/7 | ✓ Complete | 2026-02-17 |
 | 7. OCR & Visual Analysis | 0/TBD | Not started | - |
 | 8. Batch Processing & Web Interface | 0/TBD | Not started | - |
 | 9. Explainability & Dashboard | 0/TBD | Not started | - |
@@ -260,4 +260,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 ---
 *Roadmap created: 2026-02-09*
-*Last updated: 2026-02-13*
+*Last updated: 2026-03-08*
