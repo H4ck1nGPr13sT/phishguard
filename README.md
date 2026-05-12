@@ -1,131 +1,114 @@
 # PhishGuard
 
-Multi-paradigm phishing detection system combining machine learning, genetic algorithms, rule-based expert systems, and Bayesian probabilistic analysis.
+Multi-paradigm phishing detection system — praca inżynierska.
 
-## Overview
+Łączy 4 podejścia analityczne: uczenie maszynowe (7 klasyfikatorów), algorytmy genetyczne (optymalizacja hiperparametrów), system regułowy (wiedza ekspercka) i klasyfikator bayesowski. Rozbieżności między paradygmatami są same w sobie sygnałem diagnostycznym.
 
-PhishGuard integrates four analytical approaches to detect phishing attacks:
-- **Machine Learning**: 7 classifiers (Random Forest, SVM, MLP, Gradient Boosting, Logistic Regression, Naive Bayes, Decision Tree)
-- **Genetic Algorithms**: Hyperparameter optimization
-- **Rule-Based System**: Expert knowledge encoding
-- **Bayesian Analysis**: Probabilistic classification
+## Postęp implementacji
 
-The system analyzes emails, SMS messages, text content, and images (via OCR).
+| Faza | Status | Opis |
+|------|--------|------|
+| 1 — Data Pipeline | ✅ | PhishTank, UCI ML, Nazario, SMOTE, temporal split |
+| 2 — URL Detection MVP | ✅ | Random Forest + 30 cech URL + FastAPI |
+| 3 — Ensemble 7 klasyfik. | ✅ | Soft/hard/stacking voting + disagreement detection |
+| 4 — GA Optimization | ✅ | DEAP + MLflow + optymalizacja hiperparametrów i wag |
+| 5 — Rule-based + Bayesian | ✅ | 16 reguł YAML + GaussianNB + aggregation layer |
+| 6 — Email & SMS | ✅ | spaCy NLP + parser e-mail + SMS features + retrained models |
+| 7 — OCR & Visual | ⏳ | EasyOCR + brand similarity — nie zaczęte |
+| 8 — Web Interface | ⏳ | Frontend + batch CSV — nie zaczęte |
+| 9 — Explainability | ⏳ | SHAP/LIME + dashboard — nie zaczęte |
+| 10 — Dokumentacja | ⏳ | Dokumentacja akademicka — nie zaczęte |
 
-## Installation
+## Wymagania
 
-### Requirements
-- Python 3.9+
+- Python 3.9+ (testowane na 3.13)
 - pip
 
-### Setup
+## Setup na nowym komputerze
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd phishguard
-   ```
+```bash
+# 1. Klonuj repo
+git clone <url-repozytorium>
+cd Inzynierka
 
-2. Install dependencies:
-   ```bash
-   pip install -e .
-   ```
+# 2. Utwórz i aktywuj venv
+python3 -m venv .venv
+source .venv/bin/activate        # Linux/macOS
+# .venv\Scripts\activate         # Windows
 
-3. Configure environment:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings:
-   # - DATA_DIR: Path to store downloaded datasets
-   # - CACHE_DIR: Path for processed data cache
-   # - PHISHTANK_API_KEY: (Optional) PhishTank API key
-   ```
+# 3. Zainstaluj zależności
+pip install -r requirements.txt
+pip install -e .
 
-## Usage
+# 4. Pobierz model spaCy (wymagany dla email/SMS)
+python -m spacy download en_core_web_sm
 
-### Data Pipeline
-
-The data pipeline downloads, validates, and preprocesses phishing datasets:
-
-```python
-from src.data.pipeline import DataPipelineConfig, run_pipeline
-
-# Configure pipeline
-config = DataPipelineConfig(
-    phishtank_api_key="your_key",  # Optional
-    balance_target_ratio=0.5,
-    random_seed=42
-)
-
-# Run pipeline
-results = run_pipeline(config)
-
-# Access processed data
-X_train, y_train = results['train']
-X_val, y_val = results['val']
-X_test, y_test = results['test']
-
-# View reports
-print(results['reports']['balance'])
+# 5. Skonfiguruj środowisko
+cp .env.example .env
+# opcjonalnie edytuj .env (DATA_DIR, CACHE_DIR, PHISHTANK_API_KEY)
 ```
 
-### Loading Cached Data
+## Uruchomienie API
 
-After running the pipeline once, load cached data:
-
-```python
-from src.data.pipeline import load_cached_splits
-from src.config.settings import CACHE_DIR
-
-splits = load_cached_splits(CACHE_DIR)
-X_train, y_train = splits['train']
+```bash
+source .venv/bin/activate
+uvicorn src.api.main:app --reload
+# Swagger UI: http://localhost:8000/docs
 ```
 
-## Data Sources
+## Endpointy API
 
-PhishGuard uses multiple public phishing datasets:
+| Endpoint | Opis |
+|----------|------|
+| `GET /health` | Status załadowanych modeli |
+| `POST /predict` | Szybka analiza URL (Random Forest) |
+| `POST /predict/ensemble` | 7 klasyfik. + disagreement score |
+| `POST /predict/multi-paradigm` | Pełny system: ML + reguły + Bayesian |
+| `POST /predict/email` | Analiza tekstu e-maila |
+| `POST /predict/email/file` | Upload pliku .eml (max 5MB) |
+| `POST /predict/sms` | Analiza wiadomości SMS |
 
-| Source | Type | Description |
-|--------|------|-------------|
-| PhishTank | URLs | Verified phishing URLs (requires API key) |
-| UCI ML Repository | Features | Pre-extracted URL features |
-| Nazario Corpus | Emails | Phishing email collection |
+## Testy
 
-## Project Structure
-
-```
-phishguard/
-├── src/
-│   ├── config/          # Configuration management
-│   ├── data/
-│   │   ├── downloaders/ # Dataset download modules
-│   │   ├── validators/  # Data validation (Pandera schemas)
-│   │   └── preprocessors/ # Temporal split, balancing
-│   └── utils/           # Logging, caching utilities
-├── .env.example         # Environment template
-├── pyproject.toml       # Project dependencies
-└── README.md
+```bash
+source .venv/bin/activate
+pytest tests/ -v
+# Oczekiwane: ~388 testów
 ```
 
-## Key Features
+## Struktura projektu
 
-### Temporal Validation
-Data is split temporally (70% train, 15% validation, 15% test) to prevent data leakage. Training data is always from before validation/test data.
+```
+src/
+├── api/            — FastAPI endpoints + Pydantic models
+├── config/         — settings.py (dotenv, paths)
+├── data/           — downloaders, validators, preprocessors, pipeline
+├── features/       — url_features, email_features, text_features, sms_features, extractors
+├── models/         — classifiers, ensemble, disagreement, train, predict, evaluate
+├── optimization/   — GA (DEAP), MLflow, model registry, feature selection
+├── paradigms/      — rules/ (engine + YAML), bayesian/, aggregation/
+└── utils/          — cache, logging
 
-### Class Imbalance Handling
-SMOTE + undersampling is applied only to training data with configurable target ratio.
+models/             — wytrenowane modele (.joblib) — w repo, gotowe do użycia
+scripts/            — skrypty do retreningu modeli
+tests/              — ~388 testów (pytest)
+.planning/          — GSD roadmap, state, fazy
+```
 
-### Reproducibility
-- All random operations use configurable seed (default: 42)
-- Processed datasets are cached for consistent experiments
+## Modele w repozytorium
 
-## Academic Context
+Wszystkie modele są commitowane (`models/`):
+- `models/optimized/` — 7 klasyfik. zoptymalizowanych przez GA (avg F1 ~0.96)
+- `models/ensemble/` — soft voting (97.47%), hard voting, stacking
+- `models/email_sms/` — modele dla e-mail (65 cech, 98.4% acc.) i SMS (70 cech)
+- `models/bayesian/` — klasyfikator bayesowski
 
-This system is developed as part of an engineering thesis on phishing detection. The multi-paradigm approach demonstrates synergy between different analytical methods, with classifier disagreement providing additional context for classification decisions.
+Po klonowaniu modele są gotowe — nie trzeba retrenować.
 
-## License
+## Cache i dane
 
-[To be determined]
+Katalogi `data/` i `cache/` są w `.gitignore`. Regenerują się automatycznie przy pierwszym uruchomieniu pipeline lub uruchomieniu testów integracyjnych.
 
-## Contributing
+## Kontekst akademicki
 
-[To be determined]
+Praca inżynierska na temat wykrywania phishingu. Główna teza: integracja 4 paradygmatów analitycznych, gdzie rozbieżności między metodami są sygnałem diagnostycznym zwiększającym interpretowalność decyzji klasyfikacyjnej.
