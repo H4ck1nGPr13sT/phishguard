@@ -1,0 +1,225 @@
+/* PhishGuard web UI — hand-written, mobile-first, no framework.
+ * CSP: default-src 'self' with no inline styles, so ALL presentation
+ * (including one-off layout tweaks like .table-scroll) lives here.
+ */
+
+:root {
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-text: #1a1f2b;
+  --color-muted: #5a6473;
+  --color-border: #d8dce2;
+  --color-primary: #2952cc;
+  --color-primary-contrast: #ffffff;
+
+  --sev-low-bg: #d9f2df;
+  --sev-low-fg: #1a6b34;
+  --sev-medium-bg: #fff3cd;
+  --sev-medium-fg: #7a5b00;
+  --sev-high-bg: #ffe0c2;
+  --sev-high-fg: #8a3d00;
+  --sev-critical-bg: #fddede;
+  --sev-critical-fg: #8f1414;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+.site-header {
+  padding: 1.25rem 1rem;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.site-header h1 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+}
+
+.tagline {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.help-text {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+select,
+textarea,
+input[type="file"],
+button {
+  width: 100%;
+  min-height: 44px;
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 8rem;
+}
+
+button {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+.result {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+}
+
+/* Results table needs horizontal scroll on narrow viewports instead of
+ * squeezing columns unreadably small. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+
+.results-table th,
+.results-table td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+
+/* Severity bands: colour AND text label together, never colour alone. */
+.sev-low {
+  background: var(--sev-low-bg);
+  color: var(--sev-low-fg);
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.sev-medium {
+  background: var(--sev-medium-bg);
+  color: var(--sev-medium-fg);
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.sev-high {
+  background: var(--sev-high-bg);
+  color: var(--sev-high-fg);
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.sev-critical {
+  background: var(--sev-critical-bg);
+  color: var(--sev-critical-fg);
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.site-footer {
+  max-width: 960px;
+  margin: 1rem auto 2rem auto;
+  padding: 0 1rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+
+/* Two-column form/result layout once there is room for it. */
+@media (min-width: 640px) {
+  .container {
+    padding: 1.5rem;
+  }
+
+  .card#analyze-heading,
+  .card {
+    padding: 1.5rem;
+  }
+
+  #analyze-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+  }
+
+  #analyze-form .field:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  #analyze-btn {
+    grid-column: 1 / -1;
+    width: auto;
+    justify-self: start;
+    min-width: 10rem;
+  }
+
+  .result {
+    grid-column: 1 / -1;
+  }
+}

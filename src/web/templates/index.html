@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhishGuard — Phishing Detection</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>PhishGuard</h1>
+    <p class="tagline">Multi-paradigm phishing detection for URLs, emails, and SMS.</p>
+  </header>
+
+  <main class="container">
+
+    <section class="card" aria-labelledby="analyze-heading">
+      <h2 id="analyze-heading">Analyze a sample</h2>
+      <form id="analyze-form">
+        <div class="field">
+          <label for="input-type">Content type</label>
+          <select id="input-type" name="input-type">
+            <option value="url">url</option>
+            <option value="email">email</option>
+            <option value="sms">sms</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="input-text">Paste a URL, email text, or SMS text</label>
+          <textarea id="input-text" name="input-text" rows="6"
+            placeholder="Paste a URL, raw email (with From:/Subject: headers), or SMS text here..."></textarea>
+        </div>
+
+        <button id="analyze-btn" type="submit">Analyze</button>
+      </form>
+
+      <section id="result" class="result" hidden></section>
+    </section>
+
+    <section class="card" id="upload-area" aria-labelledby="upload-heading">
+      <h2 id="upload-heading">Upload a file</h2>
+      <p class="help-text">Upload an .eml email file or a screenshot image for analysis.</p>
+
+      <div class="field">
+        <label for="upload-eml">Email file (.eml)</label>
+        <input type="file" id="upload-eml" name="upload-eml" accept=".eml">
+      </div>
+
+      <div class="field">
+        <label for="upload-image">Screenshot (image/*, .png, .jpg)</label>
+        <input type="file" id="upload-image" name="upload-image" accept="image/*,.png,.jpg,.jpeg">
+      </div>
+    </section>
+
+    <section class="card" id="batch-area" aria-labelledby="batch-heading">
+      <h2 id="batch-heading">Batch analysis (CSV)</h2>
+      <p class="help-text">
+        Upload a CSV with <code>type,content</code> columns (type is one of
+        url/email/sms) to analyze many samples at once. CSV max
+        {{ max_csv_rows }} rows.
+      </p>
+
+      <div class="field">
+        <label for="upload-csv">CSV file (.csv)</label>
+        <input type="file" id="upload-csv" name="upload-csv" accept=".csv">
+      </div>
+
+      <div class="table-scroll">
+        <table id="batch-results" class="results-table" hidden>
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Type</th>
+              <th>Content</th>
+              <th>Verdict</th>
+              <th>Severity</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      Severity bands (Low / Medium / High / Critical) are an
+      <strong>uncalibrated UI presentation convenience</strong> derived from
+      the model's phishing probability — the underlying models are trained on
+      small, partly-synthetic datasets, so probabilities are not a calibrated
+      risk score. "Confidence" reflects certainty of the verdict, not the
+      severity of the threat.
+    </p>
+  </footer>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
