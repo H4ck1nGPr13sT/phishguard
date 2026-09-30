@@ -73,7 +73,8 @@ def test_extract_image_features_ocr_text_path(text_png_bytes):
     # At least one text feature should carry non-zero linguistic signal for
     # a clearly urgent phishing-style string.
     assert any(v != 0 for k, v in features.items() if k.startswith("ocr_text_"))
-    assert features["ocr_char_count"] == 24
+    # len("URGENT verify your account") == 26
+    assert features["ocr_char_count"] == 26
 
 
 def test_extract_image_features_blank_image_same_keys(
