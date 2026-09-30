@@ -6,7 +6,10 @@ not per-request. This ensures sub-500ms response times.
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+
+from src.api.web import WEB_DIR
 
 from src.models.predict import load_model
 from src.models.ensemble import load_ensemble
@@ -183,7 +186,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Static assets (CSS/JS) for the web UI, mounted at an absolute,
+# CWD-independent path (Phase 8).
+app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
+
 # Import and include endpoints
 from src.api.endpoints import router
+from src.api.web import web_router
 
+app.include_router(web_router)
 app.include_router(router)

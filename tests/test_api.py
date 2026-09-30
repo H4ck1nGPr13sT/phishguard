@@ -65,21 +65,31 @@ def client_with_ensemble(mock_model, mock_voting_ensemble):
 
 
 class TestRootEndpoint:
-    """Test root endpoint."""
+    """Test root endpoint.
+
+    Phase 8: GET / now serves the HTML web UI (src/api/web.py); the JSON
+    service-info payload previously at GET / moved to GET /api/info.
+    """
 
     def test_root_returns_200(self, client):
-        """Test GET / returns 200 with service info."""
-        response = client.get("/")
+        """Test GET /api/info returns 200 with service info."""
+        response = client.get("/api/info")
         assert response.status_code == 200
 
     def test_root_contains_service_info(self, client):
         """Test response contains service name and version."""
-        response = client.get("/")
+        response = client.get("/api/info")
         data = response.json()
         assert data["service"] == "PhishGuard API"
         assert data["version"] == "4.0.0"  # Phase 7: Image/OCR support
         assert "endpoints" in data
         assert "/predict" in data["endpoints"]
+
+    def test_root_serves_html(self, client):
+        """Test GET / returns the HTML web UI, not JSON."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/html")
 
 
 class TestHealthEndpoint:

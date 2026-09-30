@@ -1,7 +1,7 @@
 """API endpoints for PhishGuard.
 
 Endpoints:
-    - GET /: Root endpoint with API information
+    - GET /api/info: API information (GET / serves the HTML web UI, see src/api/web.py)
     - GET /health: Health check with model status
     - POST /predict: URL phishing prediction
     - POST /predict/ensemble: Ensemble prediction with all classifiers
@@ -75,9 +75,10 @@ def _visual_signal_probability(visual_dict: dict) -> float:
     return float(min(max(score, 0.0), 1.0))
 
 
-@router.get("/", tags=["root"])
-def root():
-    """Root endpoint with API information."""
+@router.get("/api/info", tags=["root"])
+def api_info():
+    """API information endpoint (moved from GET / in Phase 8 — GET /
+    now serves the HTML web UI; see src/api/web.py)."""
     return {
         "service": "PhishGuard API",
         "version": "4.0.0",  # Updated for Phase 7 - Image/OCR support
