@@ -60,28 +60,24 @@
       <p class="help-text">
         Upload a CSV with <code>type,content</code> columns (type is one of
         url/email/sms) to analyze many samples at once. CSV max
-        {{ max_csv_rows }} rows.
+        {{ max_csv_rows }} rows, 1MB.
+        <a id="sample-csv-link" href="/static/sample.csv" download>Download sample CSV</a>
       </p>
 
       <div class="field">
         <label for="file-csv">CSV file (.csv)</label>
         <input type="file" id="file-csv" name="file-csv" accept=".csv">
+        <button id="batch-btn" type="button">Analyze CSV batch</button>
       </div>
 
-      <div class="table-scroll">
-        <table id="batch-results" class="results-table" hidden>
-          <thead>
-            <tr>
-              <th>Row</th>
-              <th>Type</th>
-              <th>Content</th>
-              <th>Verdict</th>
-              <th>Severity</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <p id="batch-error" class="result-error" hidden></p>
+
+      <div id="batch-progress" class="batch-progress" hidden>
+        <progress id="batch-progress-bar" value="0" max="1"></progress>
+        <span id="batch-progress-text">0 / 0</span>
       </div>
+
+      <div id="batch-results"></div>
     </section>
 
   </main>
