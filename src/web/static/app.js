@@ -280,6 +280,197 @@ async function analyzeImageFile() {
 }
 
 /* ---------------------------------------------------------------------
+ * Batch (CSV) flow — upload, poll, incremental results table
+ * ------------------------------------------------------------------- */
+
+const BATCH_POLL_INTERVAL_MS = 1000;
+
+let batchPollTimer = null;
+let batchPollInFlight = false;
+let batchRowsRendered = 0;
+
+/** Show a generic error message in the batch area (textContent only). */
+function renderBatchError(message) {
+  const errorEl = document.getElementById("batch-error");
+  setText(errorEl, message);
+  errorEl.hidden = false;
+}
+
+function clearBatchError() {
+  const errorEl = document.getElementById("batch-error");
+  errorEl.hidden = true;
+  setText(errorEl, "");
+}
+
+/** Build the results table skeleton once via createElement and append
+ * it into #batch-results (cleared first). Returns the <tbody> to append
+ * rows into. */
+function buildBatchResultsTable() {
+  const container = document.getElementById("batch-results");
+  container.replaceChildren();
+
+  const scrollWrap = document.createElement("div");
+  scrollWrap.className = "table-scroll";
+
+  const table = document.createElement("table");
+  table.className = "results-table";
+  table.id = "batch-results-table";
+
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  for (const label of ["Row", "Type", "Content", "Verdict", "Probability", "Error"]) {
+    const th = document.createElement("th");
+    setText(th, label);
+    headRow.appendChild(th);
+  }
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  table.appendChild(tbody);
+
+  scrollWrap.appendChild(table);
+  container.appendChild(scrollWrap);
+
+  return tbody;
+}
+
+/** Update the progress bar + text (numeric values only). */
+function updateBatchProgress(done, total) {
+  const progressWrap = document.getElementById("batch-progress");
+  const bar = document.getElementById("batch-progress-bar");
+  const text = document.getElementById("batch-progress-text");
+  progressWrap.hidden = false;
+  bar.max = total > 0 ? total : 1;
+  bar.value = done;
+  setText(text, done + " / " + total);
+}
+
+/** Append one result row via textContent/createElement only (row data —
+ * content_preview / error — is attacker-controlled CSV content). */
+function appendBatchRow(tbody, row) {
+  const tr = document.createElement("tr");
+  if (row.error) {
+    tr.className = "batch-row-error";
+  }
+
+  const rowCell = document.createElement("td");
+  setText(rowCell, row.row);
+  tr.appendChild(rowCell);
+
+  const typeCell = document.createElement("td");
+  setText(typeCell, row.type ?? "");
+  tr.appendChild(typeCell);
+
+  const contentCell = document.createElement("td");
+  setText(contentCell, row.content_preview ?? "");
+  tr.appendChild(contentCell);
+
+  const verdictCell = document.createElement("td");
+  setText(verdictCell, row.prediction ?? "");
+  tr.appendChild(verdictCell);
+
+  const probCell = document.createElement("td");
+  if (typeof row.probability === "number" && !row.error) {
+    const band = severityBand(row.probability);
+    const chip = document.createElement("span");
+    chip.className = "sev-" + band.toLowerCase();
+    setText(chip, (row.probability * 100).toFixed(1) + "% " + band);
+    probCell.appendChild(chip);
+  } else {
+    setText(probCell, "n/a");
+  }
+  tr.appendChild(probCell);
+
+  const errorCell = document.createElement("td");
+  setText(errorCell, row.error ?? "");
+  tr.appendChild(errorCell);
+
+  tbody.appendChild(tr);
+}
+
+function stopBatchPolling() {
+  if (batchPollTimer !== null) {
+    clearTimeout(batchPollTimer);
+    batchPollTimer = null;
+  }
+}
+
+/** One polling tick: GET /batch/{id}?offset=<rowsRendered>, append new
+ * rows, update progress, and either schedule the next tick or stop. */
+async function pollBatchJob(jobId, tbody) {
+  if (batchPollInFlight) {
+    return;
+  }
+  batchPollInFlight = true;
+  try {
+    const resp = await fetch("/batch/" + jobId + "?offset=" + batchRowsRendered);
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      const detail = data && data.detail;
+      renderBatchError(typeof detail === "string" ? detail : "Batch status check failed");
+      stopBatchPolling();
+      return;
+    }
+
+    updateBatchProgress(data.done ?? 0, data.total ?? 0);
+
+    const rows = data.rows ?? [];
+    for (const row of rows) {
+      appendBatchRow(tbody, row);
+    }
+    batchRowsRendered += rows.length;
+
+    if (data.status === "done") {
+      stopBatchPolling();
+    } else if (data.status === "failed") {
+      renderBatchError("Batch processing failed");
+      stopBatchPolling();
+    } else {
+      batchPollTimer = setTimeout(() => pollBatchJob(jobId, tbody), BATCH_POLL_INTERVAL_MS);
+    }
+  } catch (err) {
+    renderBatchError("Batch status check failed");
+    stopBatchPolling();
+  } finally {
+    batchPollInFlight = false;
+  }
+}
+
+async function analyzeCsvBatch() {
+  const input = document.getElementById("file-csv");
+  const file = input.files && input.files[0];
+  clearBatchError();
+
+  if (!file) {
+    renderBatchError("Choose a .csv file first");
+    return;
+  }
+  if (!file.name.toLowerCase().endsWith(".csv")) {
+    renderBatchError("Invalid file type: expected .csv");
+    return;
+  }
+
+  stopBatchPolling();
+  batchRowsRendered = 0;
+
+  let data;
+  try {
+    data = await postForm("/batch", file);
+  } catch (err) {
+    renderBatchError(err && err.message ? err.message : "Batch upload failed");
+    return;
+  }
+
+  const jobId = data.job_id;
+  const total = data.total ?? 0;
+  updateBatchProgress(0, total);
+  const tbody = buildBatchResultsTable();
+
+  pollBatchJob(jobId, tbody);
+}
+
+/* ---------------------------------------------------------------------
  * Bindings
  * ------------------------------------------------------------------- */
 
@@ -305,6 +496,14 @@ function initSingleSampleFlow() {
     imageBtn.addEventListener("click", (event) => {
       event.preventDefault();
       analyzeImageFile();
+    });
+  }
+
+  const batchBtn = document.getElementById("batch-btn");
+  if (batchBtn) {
+    batchBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      analyzeCsvBatch();
     });
   }
 }
