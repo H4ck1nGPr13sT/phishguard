@@ -2,13 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase_6_complete
-last_updated: "2026-03-08T08:45:00.000Z"
+status: executing
+stopped_at: Phase 6 COMPLETE - All documentation updated, all tests passing (388 tests), all 6 phases verified
+last_updated: "2026-09-30T12:16:20.221Z"
+last_activity: 2026-09-30 -- Phase 7 planning complete
 progress:
-  total_phases: 6
+  total_phases: 10
   completed_phases: 6
-  total_plans: 31
+  total_plans: 36
   completed_plans: 31
+  percent: 60
 ---
 
 # Project State
@@ -25,14 +28,15 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 Phase: 6 of 10 (Email/SMS Support)
 Plan: 7 of 7 in current phase
-Status: COMPLETE - Phase 6 finished
-Last activity: 2026-03-08 — Plan 06-07 completed (Integration Testing and Verification)
+Status: Ready to execute
+Last activity: 2026-09-30 -- Phase 7 planning complete
 
 Progress: [██████████████████████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 31
 - Average duration: 30 min
 - Total execution time: 15 hours 53 min
@@ -49,6 +53,7 @@ Progress: [███████████████████████
 | 06-email-sms-support | 7 | 46 min | 7 min |
 
 **Recent Trend:**
+
 - Last 5 plans: 06-02 (10 min), 06-04 (4 min), 06-05 (6 min), 06-06 (6 min), 06-07 (10 min)
 - Note: Phase 06 complete - all email/SMS support delivered and verified
 
@@ -68,18 +73,21 @@ Recent decisions affecting current work:
 - Integracja 4 metod jako core value - główna teza pracy, synergia podejść
 
 **From 01-01 (2026-02-10):**
+
 - Python >=3.9 for compatibility with available system Python
 - python-dotenv for configuration (simpler than Hydra)
 - Local cache fallback strategy for all downloaders
 - Extract all URLs from Nazario emails (not just first URL)
 
 **From 01-02 (2026-02-10):**
+
 - Lazy validation with Pandera to filter invalid rows instead of failing
 - Empty string for UCI ML URLs (feature-only dataset)
 - Exact deduplication as default with fuzzy option
 - Preserve UCI ML feature columns in merged dataset
 
 **From 01-03 (2026-02-10):**
+
 - Temporal split enforces strict train < validation < test ordering to prevent data leakage
 - Samples without timestamps assigned conservatively to training set only
 - target_ratio parameter represents proportion of minority class (0.5 = 50/50 balanced)
@@ -87,6 +95,7 @@ Recent decisions affecting current work:
 - Balancing applied ONLY to training data (never validation/test)
 
 **From 01-04 (2026-02-10):**
+
 - Pipeline orchestrates 9 stages with comprehensive reporting for thesis documentation
 - Joblib caching (compression level 3) for reproducible experiments
 - Feature-only datasets skip URL deduplication to avoid false duplicates
@@ -94,12 +103,14 @@ Recent decisions affecting current work:
 - Integration tests run with UCI-only data (no API keys required for CI/CD)
 
 **From 02-01 (2026-02-10):**
+
 - tldextract for robust domain parsing (handles Public Suffix List edge cases like co.uk, github.io)
 - Suspicious TLD list: tk, ml, ga, cf, gq, xyz, pw, cc (commonly used in phishing)
 - Return default dict with zeros for empty/invalid URLs (prevents pipeline crashes)
 - 30 numeric features: 7 length, 10 character counts, 8 binary, 5 structure (including Shannon entropy)
 
 **From 02-02 (2026-02-10):**
+
 - sklearn Pipeline pattern prevents data leakage from scaling test data (fit only on train)
 - OOB score validation when test set is empty (UCI ML dataset limitation)
 - joblib model persistence with protocol=5, compress=3 (90% size reduction)
@@ -107,18 +118,21 @@ Recent decisions affecting current work:
 - Model achieves 96.14% OOB accuracy (exceeds 90% requirement)
 
 **From 02-03 (2026-02-10):**
+
 - FastAPI lifespan events load model once at startup (not per-request) for sub-500ms latency
 - Sync 'def' endpoints (not 'async def') because ML inference is CPU-bound, FastAPI uses threadpool
 - Global ml_models dict provides singleton model access across endpoints
 - Pydantic v2 field_validator enforces URL format (http/https, 10-2048 chars)
 
 **From 02-04 (2026-02-10):**
+
 - 14 integration tests cover feature extraction, model persistence, API endpoints, and end-to-end flow
 - Latency benchmarking confirms <500ms API response and <50ms feature extraction (requirements met)
 - No WHOIS dependency added - research recommends skipping for latency reasons
 - Integration tests use real model and real URLs (not mocked) for true end-to-end validation
 
 **From 02-05 (2026-02-11):**
+
 - Human verification via Swagger UI confirmed all endpoints functional
 - Health endpoint shows model loaded successfully (2.5 MB rf_pipeline.joblib)
 - Prediction endpoints validated with both legitimate and suspicious URLs
@@ -126,6 +140,7 @@ Recent decisions affecting current work:
 - Phase 2 MVP delivery complete: feature extraction → model → API → tests → human-verified
 
 **From 03-01 (2026-02-11):**
+
 - XGBoost serves as Gradient Boosting implementation (no separate sklearn GradientBoostingClassifier)
 - SVM configured with probability=True for soft voting in ensemble
 - XGBoost n_jobs=1 to prevent thread thrashing when sklearn uses n_jobs=-1
@@ -134,6 +149,7 @@ Recent decisions affecting current work:
 - 7 classifiers trained with 89% average accuracy: RF (96.14% OOB), SVM (94.74%), MLP (96.29%), XGBoost (95.52%), LR (91.68%), NB (64.07%), DT (92.62%)
 
 **From 03-02 (2026-02-11):**
+
 - Soft voting averages predict_proba() from all 7 classifiers (97.47% accuracy)
 - Hard voting uses majority vote across predictions (97.14% accuracy)
 - Stacking uses LogisticRegression meta-model with cv=5 to prevent data leakage
@@ -142,6 +158,7 @@ Recent decisions affecting current work:
 - All 3 aggregation strategies exceed average individual classifier accuracy (89.15%)
 
 **From 03-03 (2026-02-11):**
+
 - Shannon entropy normalized by log2(n_classifiers) for disagreement detection (0-1 scale)
 - For 7 classifiers with 4-3 split, normalized entropy ~0.35 (not close to 1.0)
 - Default disagreement threshold 0.7 is high bar for binary classification scenarios
@@ -150,6 +167,7 @@ Recent decisions affecting current work:
 - Backward compatible ensemble loading - API works with RF only if ensemble models missing
 
 **From 03-04 (2026-02-11):**
+
 - Retrained all models with real URL features from OpenPhish + legitimate URLs to fix feature mismatch
 - UCI ML pre-encoded features (-1/0/1) incompatible with our custom 30-feature extraction pipeline
 - OpenPhish public feed provides 300 phishing URLs without API key requirement
@@ -161,6 +179,7 @@ Recent decisions affecting current work:
 - Phase 3 complete: all 7 classifiers operational with disagreement detection functional
 
 **From 04-01 (2026-02-11):**
+
 - DEAP 1.4.3 chosen as GA framework for full control over evolution process (vs. sklearn-genetic-opt abstraction)
 - F1-score with 5-fold stratified CV as fitness metric to handle class imbalance and prevent overfitting
 - Search spaces defined 2-3x wider than baseline to enable exploration (RF n_estimators: 50-300, XGBoost: 9 hyperparameters)
@@ -172,6 +191,7 @@ Recent decisions affecting current work:
 - Log-scale sampling for C, gamma, alpha enables uniform exploration across orders of magnitude
 
 **From 04-02 (2026-02-11):**
+
 - MLflow tracking with single run per classifier, generation metrics via step parameter (simpler than nested runs)
 - cxBlend crossover works with any number of hyperparameters (including 1 for NB), alpha=0.5 for exploration
 - mutPolynomialBounded mutation handles mixed int/float/categorical parameters (vs. mutUniformInt)
@@ -182,6 +202,7 @@ Recent decisions affecting current work:
 - Small test set (50 samples) causes variance in test F1 scores, consider expanding for future phases
 
 **From 04-03 (2026-02-11):**
+
 - Binary representation (1=selected, 0=excluded) for GA feature selection
 - RF proxy classifier for fitness evaluation - fast and robust for feature selection across all classifiers
 - Minimum 5 features constraint prevents degenerate solutions
@@ -192,6 +213,7 @@ Recent decisions affecting current work:
 - Many length features redundant - url_length sufficient, hostname/domain/tld less important
 
 **From 04-04 (2026-02-11):**
+
 - Blend crossover (alpha=0.5) for continuous weight space exploration beyond parent bounds
 - Minimum weight constraint 0.01 preserves ensemble diversity (prevents zeroing out classifiers)
 - Equal-weight baseline comparison validates GA value (+0.53% F1 improvement)
@@ -201,6 +223,7 @@ Recent decisions affecting current work:
 - Weighted voting ensemble achieves F1=0.9654 vs F1=0.9602 equal-weight baseline
 
 **From 04-05 (2026-02-11):**
+
 - Model registry uses cache/active_models.json for version selection (simple, explicit, version-controllable)
 - get_active_model() defaults to ga_optimized with fallback to baseline for backward compatibility
 - API loads models from registry at startup, not hardcoded paths
@@ -210,6 +233,7 @@ Recent decisions affecting current work:
 - MLflow Model Registry tracks all baseline and optimized versions with metrics
 
 **From 04-06 (2026-02-12):**
+
 - Comprehensive 24-test suite covers all GA optimization modules (491 lines)
 - Test suite runs in <30 seconds using synthetic data and reduced GA parameters for CI/CD
 - Integration tests validate full optimization pipeline from hyperparameter tuning to model prediction
@@ -218,6 +242,7 @@ Recent decisions affecting current work:
 - Phase 4 complete: all genetic algorithm optimization objectives achieved
 
 **From 05-01 (2026-02-12):**
+
 - Rule-based expert system with 16 weighted phishing rules (total weight 3.05, normalized to [0, 1])
 - Three condition types: keyword_match (raw URL), feature_check (numeric features), domain_match (known domains)
 - Raw URL passed separately to evaluate() for keyword matching (not in feature dict)
@@ -226,6 +251,7 @@ Recent decisions affecting current work:
 - Rules cover URL structure (IP, shorteners, subdomains, TLDs), keywords (urgent, security, action, brands, threats), structure indicators (length, entropy, special chars), domain indicators (HTTPS, ports, @ symbol)
 
 **From 05-02 (2026-02-12):**
+
 - BayesianClassifier wraps GaussianNB with Pipeline (StandardScaler + GaussianNB) for feature normalization
 - class_prior_ attribute (not class_log_prior_) used to extract class priors from fitted GaussianNB
 - predict_with_posterior() returns structured dict: posterior_phishing, posterior_legitimate, prediction, confidence, prior_info
@@ -236,6 +262,7 @@ Recent decisions affecting current work:
 - Integration with existing feature extraction pipeline (extract_url_features)
 
 **From 05-03 (2026-02-12):**
+
 - Default paradigm weights: ML ensemble=0.5, Rules=0.3, Bayesian=0.2 (ML dominant but not overwhelming)
 - ParadigmWeights dataclass validates sum to 1.0 with soft warnings for out-of-range weights
 - Cross-paradigm disagreement uses normalized Shannon entropy: H / log2(3) for 3 paradigms
@@ -246,6 +273,7 @@ Recent decisions affecting current work:
 - 20-test suite validates weights, disagreement detection, and aggregation (all passing in 0.38s)
 
 **From 05-04 (2026-02-12):**
+
 - /predict/multi-paradigm endpoint requires all 4 models loaded (voting_soft, rule_engine, bayesian, aggregator) - returns 503 if any missing
 - Raw URL passed to rule engine via raw_url parameter for keyword matching alongside feature dict
 - Nested Pydantic models (MultiParadigmResponse, ParadigmContributions, ParadigmDisagreementInfo, FiredRule) provide structured API response
@@ -254,6 +282,7 @@ Recent decisions affecting current work:
 - 12-test suite validates endpoint structure, error handling, probability ranges (all passing in 1.81s)
 
 **From 05-05 (2026-02-13):**
+
 - Rule engine tests use tempfile YAML for custom rule loading verification (isolated test fixtures)
 - Integration tests validate all Phase 5 requirements (RULE-01 through AGG-04) with traceability
 - Separate test classes per concern (definitions, engine, conditions, edge cases) for targeted testing
@@ -262,6 +291,7 @@ Recent decisions affecting current work:
 - All 88 tests pass across Phase 5 test suites (22 rules + 18 integration + 11 bayesian + 20 aggregation + 12 API + 5 misc)
 
 **From 06-01 (2026-02-16):**
+
 - Email parsing module using stdlib email.message_from_bytes with RFC 5322 compliant policy.default
 - Extract authentication status from Authentication-Results header (faster than live DKIM verification, no DNS lookups)
 - 15 email header features: authentication (SPF/DKIM/DMARC), sender domain (length, suspicious TLD, Reply-To mismatch), subject (length, urgent keywords, Re:/Fwd: prefixes), structure (header count, X-headers, Received headers)
@@ -273,6 +303,7 @@ Recent decisions affecting current work:
 - Follows url_features.py pattern with default zero features for invalid/empty emails
 
 **From 06-03 (2026-02-16):**
+
 - SMS feature extraction module with 20 smishing-specific features
 - Four feature categories: length (4), URL (4), phone (2), character (4), patterns (6)
 - Dynamic regex pattern for shortened URL detection (14 common domains: bit.ly, tinyurl, t.co, etc.)
@@ -284,6 +315,7 @@ Recent decisions affecting current work:
 - No duplication of NLP features - SMS features focus on message-specific patterns only
 
 **From 06-02 (2026-02-16):**
+
 - NLP text feature extraction with spaCy 3.8.11 and textstat 0.7.12
 - 50 features total: lexical (15), syntactic (15), stylometric (10), sentiment (10)
 - Lexical: word counts, character distributions, URL/email/phone patterns
@@ -297,6 +329,7 @@ Recent decisions affecting current work:
 - 36 comprehensive unit tests covering all feature categories (100% pass rate in 6.86s)
 
 **From 06-04 (2026-02-16):**
+
 - Unified extract_features() interface handles URL, email, and SMS inputs with auto-detection
 - ContentType enum (URL, EMAIL, EMAIL_FILE, SMS) for explicit type routing
 - Email extraction combines ~15 header + ~50 text features = ~65 total
@@ -306,6 +339,7 @@ Recent decisions affecting current work:
 - 16 integration tests validate unified extraction across all content types (100% pass rate)
 
 **From 06-05 (2026-02-16):**
+
 - POST /predict/email, /predict/email/file, /predict/sms REST API endpoints for email/SMS phishing detection
 - FastAPI UploadFile for .eml file handling with 5MB size limit and extension validation
 - EmailSMSResponse with optional paradigm_contributions for future multi-paradigm integration
@@ -316,6 +350,7 @@ Recent decisions affecting current work:
 - 21 API tests: 8 passed (validation), 13 skipped (prediction blocked on model retraining)
 
 **From 06-06 (2026-02-16):**
+
 - All 7 classifiers retrained for email (65 features) and SMS (70 features) content types
 - Synthetic training datasets: 200 email samples (100 phishing + 100 legitimate), 200 SMS samples
 - Email models achieve 90-100% test accuracy (avg 98.4%), SMS models achieve 100% test accuracy
@@ -327,6 +362,7 @@ Recent decisions affecting current work:
 - Quality validation: no duplicates, balanced classes, domain diversity requirements met
 
 **From 06-07 (2026-02-17):**
+
 - Integration tests use real models (not mocked) for end-to-end validation
 - Test suite accepts 200 or 503 responses (503 when models not loaded)
 - Human verification confirms all Phase 6 requirements met via Swagger UI
@@ -341,6 +377,7 @@ None yet.
 ### Blockers/Concerns
 
 **Phase 1:**
+
 - PhishTank API key not configured yet - need user to register at phishtank.com
 - Nazario corpus availability uncertain (original site archived) - may need Web Archive or alternative source
 - UCI ML dataset has features only (no raw URLs) - Phase 02 preprocessing must handle both URL-based and feature-based inputs
@@ -366,6 +403,7 @@ Resume file: None
 **Project Status:** Phase 6 (Email & SMS Support) successfully completed and verified.
 
 All deliverables:
+
 - ✓ 6 phases complete (31 plans executed)
 - ✓ Email/SMS phishing detection with 65+ email and 70+ SMS features
 - ✓ Multi-paradigm system (ML ensemble + Rules + Bayesian)
@@ -374,6 +412,7 @@ All deliverables:
 - ✓ 388 tests passing (no regressions)
 
 To continue development:
+
 ```
 /gsd:plan-phase 7
 ```
@@ -381,6 +420,7 @@ To continue development:
 Phase 7 focus: OCR & Visual Analysis for image-based phishing detection
 
 **Completed Phases:**
+
 1. Foundation & Data Pipeline (4 plans)
 2. Core ML Pipeline & URL Detection MVP (5 plans)
 3. ML Ensemble Expansion (4 plans)
