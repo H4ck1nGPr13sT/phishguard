@@ -32,6 +32,7 @@ from src.api.models import (
 from src.features.extractors import extract_url_features, extract_email_features, extract_sms_features, ContentType
 from src.features.image_features import load_and_ocr, extract_visual_features
 from src.api.main import ml_models
+from src.api.inference import predict_url_multi, predict_email_text, predict_sms_text
 from src.models.ensemble import get_individual_predictions
 from src.models.disagreement import get_disagreement_summary
 
@@ -245,29 +246,8 @@ def predict_multi_paradigm(request: URLRequest):
         )
 
     try:
-        # Extract features from URL
-        features = extract_url_features(request.url)
-        feature_array = np.array([list(features.values())])
-
-        # 1. Get ML ensemble prediction
-        ensemble = ml_models["voting_soft"]
-        ensemble_proba = ensemble.predict_proba(feature_array)[0]
-        ml_result = {
-            'ensemble_probability': float(ensemble_proba[1]),
-            'prediction': 'phishing' if ensemble_proba[1] > 0.5 else 'legitimate'
-        }
-
-        # 2. Get rule-based prediction
-        # Pass raw_url for keyword matching (Plan 05-01 implements raw_url parameter)
-        rule_result = ml_models["rule_engine"].evaluate(features, raw_url=request.url)
-
-        # 3. Get Bayesian prediction
-        bayesian_result = ml_models["bayesian"].predict_with_posterior(feature_array)
-
-        # 4. Aggregate all three paradigms
-        aggregated = ml_models["aggregator"].aggregate(
-            ml_result, rule_result, bayesian_result
-        )
+        # Shared helper (also used by the batch runner)
+        aggregated = predict_url_multi(request.url)
 
         processing_time = (time.time() - start_time) * 1000
 
@@ -358,41 +338,18 @@ def predict_email(request: EmailTextRequest):
         )
 
     try:
-        # Extract features from email text
-        # Convert string to bytes for email parser
-        raw_bytes = request.raw_email.encode('utf-8')
-        features = extract_email_features(raw_bytes)
-        feature_array = np.array([list(features.values())])
-
-        # Use email-specific ensemble model
-        ensemble = ml_models["email_ensemble"]
-
-        # Get prediction using ensemble model
-        proba = ensemble.predict_proba(feature_array)[0]
-        phishing_prob = float(proba[1])
-        prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
-        confidence = float(max(proba))
-
+        result = predict_email_text(request.raw_email)
         processing_time = (time.time() - start_time) * 1000
-
-        # Build explanation
-        explanation = f"Email analyzed with {len(features)} features. "
-        if confidence > 0.9:
-            explanation += f"High confidence {prediction} ({confidence:.1%})."
-        elif confidence > 0.7:
-            explanation += f"Moderate confidence {prediction} ({confidence:.1%})."
-        else:
-            explanation += f"Low confidence {prediction} ({confidence:.1%}). Consider manual review."
 
         return EmailSMSResponse(
             content_type="email",
-            final_prediction=prediction,
-            final_probability=phishing_prob,
-            confidence=confidence,
-            feature_count=len(features),
+            final_prediction=result["final_prediction"],
+            final_probability=result["final_probability"],
+            confidence=result["confidence"],
+            feature_count=result["feature_count"],
             paradigm_contributions=None,  # Not using multi-paradigm yet
             active_rules=[],
-            explanation=explanation,
+            explanation=result["explanation"],
             processing_time_ms=processing_time
         )
     except HTTPException:
@@ -504,39 +461,18 @@ def predict_sms(request: SMSRequest):
         )
 
     try:
-        # Extract features from SMS message
-        features = extract_sms_features(request.message)
-        feature_array = np.array([list(features.values())])
-
-        # Use SMS-specific ensemble model
-        ensemble = ml_models["sms_ensemble"]
-
-        # Get prediction using ensemble model
-        proba = ensemble.predict_proba(feature_array)[0]
-        phishing_prob = float(proba[1])
-        prediction = "phishing" if phishing_prob > 0.5 else "legitimate"
-        confidence = float(max(proba))
-
+        result = predict_sms_text(request.message)
         processing_time = (time.time() - start_time) * 1000
-
-        # Build explanation
-        explanation = f"SMS message analyzed with {len(features)} features. "
-        if confidence > 0.9:
-            explanation += f"High confidence {prediction} ({confidence:.1%})."
-        elif confidence > 0.7:
-            explanation += f"Moderate confidence {prediction} ({confidence:.1%})."
-        else:
-            explanation += f"Low confidence {prediction} ({confidence:.1%}). Consider manual review."
 
         return EmailSMSResponse(
             content_type="sms",
-            final_prediction=prediction,
-            final_probability=phishing_prob,
-            confidence=confidence,
-            feature_count=len(features),
+            final_prediction=result["final_prediction"],
+            final_probability=result["final_probability"],
+            confidence=result["confidence"],
+            feature_count=result["feature_count"],
             paradigm_contributions=None,  # Not using multi-paradigm yet
             active_rules=[],
-            explanation=explanation,
+            explanation=result["explanation"],
             processing_time_ms=processing_time
         )
     except HTTPException:
