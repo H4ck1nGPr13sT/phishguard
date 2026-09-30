@@ -15,7 +15,7 @@ authors = [
 dependencies = [
     "pandas>=2.0",
     "imbalanced-learn>=0.12",
-    "scikit-learn>=1.5",
+    "scikit-learn==1.8.0",
     "pandera>=0.18",
     "python-dotenv>=1.0",
     "requests>=2.31",
