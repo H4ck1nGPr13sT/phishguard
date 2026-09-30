@@ -379,11 +379,11 @@ Tests that need fast deterministic results should monkeypatch the per-row infere
 | A3 | Limits (1MB, 500 rows, 5000 chars/cell, 50 jobs, 1s polling) are sensible demo defaults | Pattern 3 | Tunable constants; user may prefer other values |
 | A4 | Moving JSON root to `/api/info` is acceptable (vs. keeping JSON at `/`) | Pattern 1 | Existing consumers/tests of `GET /` need updating |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Where should the JSON root go?** Recommendation: `/api/info`; update the one existing root test.
-2. **Refactor endpoints into shared helpers vs. call endpoint functions?** Recommendation: extract helpers (cleaner, testable); fallback is direct calls with request models.
-3. **Should the UI call `/predict/ensemble` too?** No; Phase 9 covers model comparison (WEB-05 is mapped to Phase 3/9).
+1. **Where should the JSON root go?** RESOLVED: `/api/info`; update the one existing root test. (locked decision 2, implemented in 08-02)
+2. **Refactor endpoints into shared helpers vs. call endpoint functions?** RESOLVED: extract shared helpers (cleaner, testable), no internal HTTP calls. (locked decision 3, implemented in 08-04 `inference.py`)
+3. **Should the UI call `/predict/ensemble` too?** RESOLVED: No; Phase 9 covers model comparison (WEB-05 is mapped to Phase 3/9). (locked decision 6)
 
 ## Environment Availability
 
