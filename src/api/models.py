@@ -66,6 +66,7 @@ class HealthResponse(BaseModel):
     model_loaded: bool
     email_model_loaded: bool = False
     sms_model_loaded: bool = False
+    ocr_backend_loaded: bool = False
     version: str = "3.0.0"
 
 
@@ -301,7 +302,7 @@ class EmailSMSResponse(BaseModel):
     Similar to MultiParadigmResponse but adapted for email/SMS input.
     """
 
-    content_type: Literal["email", "sms"] = Field(
+    content_type: Literal["email", "sms", "image"] = Field(
         ..., description="Type of content analyzed"
     )
     final_prediction: Literal["phishing", "legitimate"] = Field(
@@ -327,4 +328,16 @@ class EmailSMSResponse(BaseModel):
     )
     processing_time_ms: float = Field(
         ..., description="Processing time in milliseconds"
+    )
+    visual_closest_brand: Optional[str] = Field(
+        None,
+        description="Closest-matching brand by perceptual-hash similarity "
+                     "(image content only; None for email/sms). Diagnostic, "
+                     "not a standalone verdict.",
+    )
+    visual_hash_distance: Optional[float] = Field(
+        None,
+        description="Hamming distance (0-64) to the closest brand reference "
+                     "hash (image content only; None for email/sms). Lower "
+                     "= more visually similar.",
     )

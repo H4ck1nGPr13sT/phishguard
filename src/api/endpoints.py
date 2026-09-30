@@ -64,6 +64,7 @@ def health():
         model_loaded="phishing_detector" in ml_models,
         email_model_loaded="email_ensemble" in ml_models,
         sms_model_loaded="sms_ensemble" in ml_models,
+        ocr_backend_loaded="ocr_backend" in ml_models,
     )
 
 

@@ -14,6 +14,7 @@ from src.optimization.model_registry import get_active_model
 from src.paradigms.rules import RuleEngine
 from src.paradigms.bayesian import BayesianClassifier
 from src.paradigms.aggregation import MultiParadigmAggregator
+from src.features.ocr import resolve_ocr_backend, NullOCRBackend
 import joblib
 
 # Global model storage - loaded once at startup
@@ -146,6 +147,21 @@ async def lifespan(app: FastAPI):
                 print(f"Warning: Failed to load SMS ensemble: {e}")
     else:
         print(f"Warning: Email/SMS models not found. Run scripts/train_email_sms_models.py")
+
+    # Load and warm the OCR backend (Phase 7). Warming here (not per-request)
+    # is required to keep /predict/image within the documented latency
+    # exception — EasyOCR's first-use model load costs several seconds.
+    # ANY failure here (offline env, model-download failure) must NOT crash
+    # startup: fall back to NullOCRBackend so the rest of the API stays
+    # functional (T-07-12).
+    try:
+        ml_models["ocr_backend"] = resolve_ocr_backend()
+        if hasattr(ml_models["ocr_backend"], "warm_up"):
+            ml_models["ocr_backend"].warm_up()
+        print(f"OCR backend loaded and warmed: {type(ml_models['ocr_backend']).__name__}")
+    except Exception as e:
+        print(f"Warning: Failed to warm OCR backend, falling back to NullOCRBackend: {e}")
+        ml_models["ocr_backend"] = NullOCRBackend()
 
     total_models = len(ml_models)
     print(f"Total models loaded: {total_models} (1 primary + {ensemble_loaded} ensemble + Phase 5 paradigms + {email_sms_loaded} email/SMS)")
