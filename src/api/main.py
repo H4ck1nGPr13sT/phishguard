@@ -217,6 +217,8 @@ async def security_headers_middleware(request, call_next):
 # Import and include endpoints
 from src.api.endpoints import router
 from src.api.web import web_router
+from src.api.batch import router as batch_router
 
 app.include_router(web_router)
 app.include_router(router)
+app.include_router(batch_router)
