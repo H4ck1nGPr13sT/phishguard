@@ -402,7 +402,12 @@ X_background = bg["X_train"]  # shape (200, 30), balanced 100 phishing / 100 leg
 
 **If this table is empty:** N/A — see rows above. All load-bearing technical claims (package existence/version, dependency graph, timing, SHAP output shapes, cache-file schema compatibility) were independently verified via tool execution in this session, not merely asserted from training knowledge.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> RESOLVED by orchestrator locked decisions (2026-09-30), applied across plans 09-01..09-04:
+> - **Q1 → RESOLVED: URL-only for v1.** SHAP feature importance is scoped to the URL paradigm (RF model, 30-col `cache/url_training_data.joblib` background). Email/SMS/image SHAP is out of v1 scope (no schema-matching background data). The UI labels SHAP importance as URL-only. (locked decision 1)
+> - **Q2 → RESOLVED: NEW `ExplainResponse` model, single `/explain` call.** Do NOT extend `MultiParadigmResponse` — the recommendation to extend it is OVERRIDDEN. The consolidated `/explain` endpoint returns the 7 individual classifier predictions (reusing `get_individual_predictions`) inside a new dedicated response model, so existing tested models are untouched. (locked decision 2)
+> - **Q3 → RESOLVED: expose `disagreement_explanation` as a new field** in the `/explain` payload (from `get_disagreement_explanation()`), satisfying WEB-06's "detailed explanation". (locked decision 2/4)
 
 1. **Should `/explain` support email/SMS/image content types, or only URL?**
    - What we know: A schema-matching SHAP background sample (`cache/url_training_data.joblib`) exists only for the URL paradigm (30 features). No equivalent cached, schema-matching background sample exists for the email (65-feature) or SMS (70-feature) ensembles — `cache/email_sms/` was empty when checked.
