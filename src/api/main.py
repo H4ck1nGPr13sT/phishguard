@@ -190,6 +190,30 @@ app = FastAPI(
 # CWD-independent path (Phase 8).
 app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 
+# Paths that need inline scripts / CDN assets (Swagger UI, ReDoc, the raw
+# OpenAPI schema) and must NOT receive the CSP header, or they break.
+_CSP_EXEMPT_PREFIXES = ("/docs", "/redoc")
+_CSP_EXEMPT_EXACT = {"/openapi.json"}
+
+
+@app.middleware("http")
+async def security_headers_middleware(request, call_next):
+    """Set security headers (T-08-01/02/03) on every response.
+
+    nosniff and X-Frame-Options DENY apply everywhere. The CSP
+    (default-src 'self') is scoped to skip Swagger/ReDoc/OpenAPI paths,
+    which rely on inline scripts and CDN assets (T-08-05).
+    """
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+
+    path = request.url.path
+    if not (path.startswith(_CSP_EXEMPT_PREFIXES) or path in _CSP_EXEMPT_EXACT):
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+    return response
+
 # Import and include endpoints
 from src.api.endpoints import router
 from src.api.web import web_router
