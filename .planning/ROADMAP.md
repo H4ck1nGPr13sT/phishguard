@@ -178,10 +178,14 @@ Plans:
   4. System detects visual similarity to legitimate brands using perceptual hashing or CNN embeddings
   5. System combines OCR-extracted text analysis with visual feature analysis for final verdict
 
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 07-01-PLAN.md — OCR backend interface + OCR-text feature path (torch-isolated)
+- [ ] 07-02-PLAN.md — Visual features: perceptual-hash brand similarity + OpenCV heuristics
+- [ ] 07-03-PLAN.md — ContentType.IMAGE dispatch in unified extractor
+- [ ] 07-04-PLAN.md — POST /predict/image endpoint (safe upload + aggregator-combined verdict)
+- [ ] 07-05-PLAN.md — Real-OCR integration test + empirical latency measurement
 
 ### Phase 8: Batch Processing & Web Interface
 **Goal**: User-facing web application with form input, file upload (CSV batch, .eml, images), and responsive design for mobile/desktop.
@@ -253,11 +257,11 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Genetic Algorithm Optimization | 6/6 | ✓ Complete | 2026-02-12 |
 | 5. Alternative Detection Paradigms | 5/5 | ✓ Complete | 2026-02-13 |
 | 6. Email & SMS Support | 7/7 | ✓ Complete | 2026-02-17 |
-| 7. OCR & Visual Analysis | 0/TBD | Not started | - |
+| 7. OCR & Visual Analysis | 0/5 | Not started | - |
 | 8. Batch Processing & Web Interface | 0/TBD | Not started | - |
 | 9. Explainability & Dashboard | 0/TBD | Not started | - |
 | 10. Evaluation & Documentation | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-09*
-*Last updated: 2026-03-08*
+*Last updated: 2026-09-30*
