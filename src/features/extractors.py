@@ -31,6 +31,7 @@ class ContentType(Enum):
     EMAIL = "email"
     EMAIL_FILE = "email_file"  # .eml bytes
     SMS = "sms"
+    IMAGE = "image"
 
 
 # Module-level extractor - loads spaCy model once
@@ -51,6 +52,30 @@ def get_text_extractor() -> TextFeatureExtractor:
     if _text_extractor is None:
         _text_extractor = TextFeatureExtractor()
     return _text_extractor
+
+
+# Module-level OCR backend singleton - avoids re-resolving (and, once
+# EasyOCRBackend is in use, re-loading model weights) on every image request.
+_ocr_backend = None
+
+
+def get_ocr_backend():
+    """Get or create singleton OCR backend for image feature extraction.
+
+    Mirrors get_text_extractor()'s singleton-on-first-use pattern. Lazily
+    imports resolve_ocr_backend() from src.features.ocr INSIDE this function
+    body (never at module top level) so importing src.features.extractors
+    never requires easyocr/torch to be installed.
+
+    Returns:
+        Singleton OCRBackend instance (EasyOCRBackend if easyocr is
+        importable, else NullOCRBackend).
+    """
+    global _ocr_backend
+    if _ocr_backend is None:
+        from src.features.ocr import resolve_ocr_backend
+        _ocr_backend = resolve_ocr_backend()
+    return _ocr_backend
 
 
 def extract_url_features(url: str) -> Dict[str, float]:
@@ -263,6 +288,10 @@ def detect_content_type(content: Union[str, bytes]) -> ContentType:
     Analyzes the content to determine if it's a URL, email, or SMS message.
     Uses pattern matching on common headers and URL schemes.
 
+    Note: images are never auto-detected here. Raw image bytes are
+    ambiguous versus .eml bytes, and image requests always arrive from the
+    API endpoint with an explicit ContentType.IMAGE — see extract_features().
+
     Args:
         content: Input content (string or bytes)
 
@@ -331,6 +360,7 @@ def extract_features(content: Union[str, bytes],
             - 0 = URL
             - 1 = EMAIL
             - 2 = SMS
+            - 3 = IMAGE
 
     Examples:
         >>> # Auto-detect URL
@@ -378,6 +408,23 @@ def extract_features(content: Union[str, bytes],
             content = content.decode('utf-8', errors='ignore')
         features = extract_sms_features(content)
         features['content_type'] = 2
+
+    elif content_type == ContentType.IMAGE:
+        # Images are binary-only - no silent str->bytes coercion (T-07-06).
+        if not isinstance(content, bytes):
+            raise TypeError(
+                "ContentType.IMAGE requires bytes content (raw image data); "
+                f"got {type(content).__name__} instead."
+            )
+        # Lazy imports: image_features pulls Pillow eagerly and cv2/imagehash
+        # lazily, and resolve_ocr_backend() lazily imports easyocr/torch.
+        # Importing these INSIDE this branch (never at module top level)
+        # preserves the torch/cv2-free module-load contract relied on by
+        # the rest of the test suite.
+        from src.features.image_features import extract_image_features
+        backend = get_ocr_backend()
+        features = extract_image_features(content, backend)
+        features['content_type'] = 3
 
     else:
         # Fallback to SMS for unknown types
