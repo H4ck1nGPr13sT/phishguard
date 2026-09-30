@@ -225,10 +225,13 @@ Plans:
   4. System explains disagreements when present (e.g., "SVM and Naive Bayes disagree due to URL length vs. lexical features")
   5. System generates natural language explanation summarizing verdict (e.g., "Flagged as phishing because domain registered 2 days ago, uses PayPal branding, and contains urgent language")
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 09-01-PLAN.md — Wave 0 tests (test_api_explain.py + dashboard markup/JS contract) + add shap dependency
+- [ ] 09-02-PLAN.md — SHAP explainer module (TreeExplainer on RF, URL-only, correct background, lifespan warm) + consolidated POST /explain endpoint + response model
+- [ ] 09-03-PLAN.md — Dashboard frontend: Explain button + inline-SVG classifier-comparison & SHAP charts + rules/disagreement/NL rendering (XSS-safe, no CDN)
+- [ ] 09-04-PLAN.md — Human-verify browser checkpoint (desktop + 375px) + full suite incl. real-SHAP slow test
 
 ### Phase 10: Evaluation & Documentation
 **Goal**: Academic-grade documentation with theoretical background, architecture diagrams, comprehensive evaluation, and API documentation meeting thesis requirements.
