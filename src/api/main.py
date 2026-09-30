@@ -4,6 +4,15 @@ CRITICAL: Model is loaded ONCE at startup via lifespan events,
 not per-request. This ensures sub-500ms response times.
 """
 
+# OpenMP safety — MUST run before any import that loads an OpenMP runtime
+# (xgboost via the ensembles, torch via the EasyOCR backend). On macOS both
+# ship their own OpenMP; loading both in one process without these settings
+# segfaults or DEADLOCKS the server during lifespan startup (the app then
+# never becomes reachable). setdefault() lets an explicit env override win.
+import os
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
