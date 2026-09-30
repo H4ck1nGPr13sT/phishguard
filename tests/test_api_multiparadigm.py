@@ -228,11 +228,15 @@ class TestMultiParadigmMissingModels:
 
 
 class TestRootEndpoint:
-    """Test root endpoint includes multi-paradigm."""
+    """Test API info endpoint includes multi-paradigm.
+
+    Phase 8: the JSON info payload moved from GET / to GET /api/info
+    (GET / now serves the HTML web UI; see src/api/web.py).
+    """
 
     def test_root_lists_multiparadigm_endpoint(self):
-        """Test root endpoint lists /predict/multi-paradigm."""
+        """Test /api/info endpoint lists /predict/multi-paradigm."""
         with TestClient(app) as client:
-            response = client.get("/")
+            response = client.get("/api/info")
             data = response.json()
             assert "/predict/multi-paradigm" in data['endpoints']
