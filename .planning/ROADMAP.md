@@ -201,10 +201,15 @@ Plans:
   4. System processes CSV batch uploads asynchronously and displays progress/results table
   5. Web interface is responsive and functional on mobile browsers and desktop
 
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 08-01-PLAN.md — Wave 0 test scaffolding (test_web_ui.py, test_batch_api.py, sample CSV fixture)
+- [ ] 08-02-PLAN.md — FastAPI web wiring: Jinja2 index, /static mount, JSON root → /api/info, responsive base template + CSS, security headers
+- [ ] 08-03-PLAN.md — Single-sample vanilla JS flow (paste + .eml/image upload, normalize, severity band, XSS-safe render)
+- [ ] 08-04-PLAN.md — CSV batch backend: shared inference helpers + POST /batch + GET /batch/{id} polling + bounded in-memory job store
+- [ ] 08-05-PLAN.md — CSV batch frontend: upload, progress bar, incremental results table, sample.csv
+- [ ] 08-06-PLAN.md — Human-verify browser checkpoint (desktop + 375px mobile)
 
 ### Phase 9: Explainability & Dashboard
 **Goal**: SHAP/LIME feature importance explanations and multi-classifier comparison dashboard with visualization of disagreements.
@@ -258,7 +263,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Alternative Detection Paradigms | 5/5 | ✓ Complete | 2026-02-13 |
 | 6. Email & SMS Support | 7/7 | ✓ Complete | 2026-02-17 |
 | 7. OCR & Visual Analysis | 5/5 | Complete   | 2026-09-30 |
-| 8. Batch Processing & Web Interface | 0/TBD | Not started | - |
+| 8. Batch Processing & Web Interface | 0/6 | Planned | - |
 | 9. Explainability & Dashboard | 0/TBD | Not started | - |
 | 10. Evaluation & Documentation | 0/TBD | Not started | - |
 
