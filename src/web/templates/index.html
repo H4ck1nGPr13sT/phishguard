@@ -43,13 +43,15 @@
       <p class="help-text">Upload an .eml email file or a screenshot image for analysis.</p>
 
       <div class="field">
-        <label for="upload-eml">Email file (.eml)</label>
-        <input type="file" id="upload-eml" name="upload-eml" accept=".eml">
+        <label for="file-eml">Email file (.eml)</label>
+        <input type="file" id="file-eml" name="file-eml" accept=".eml">
+        <button id="analyze-eml-btn" type="button">Analyze email file</button>
       </div>
 
       <div class="field">
-        <label for="upload-image">Screenshot (image/*, .png, .jpg)</label>
-        <input type="file" id="upload-image" name="upload-image" accept="image/*,.png,.jpg,.jpeg">
+        <label for="file-image">Screenshot (image/*, .png, .jpg, .jpeg)</label>
+        <input type="file" id="file-image" name="file-image" accept="image/*,.png,.jpg,.jpeg">
+        <button id="analyze-image-btn" type="button">Analyze image</button>
       </div>
     </section>
 
@@ -62,8 +64,8 @@
       </p>
 
       <div class="field">
-        <label for="upload-csv">CSV file (.csv)</label>
-        <input type="file" id="upload-csv" name="upload-csv" accept=".csv">
+        <label for="file-csv">CSV file (.csv)</label>
+        <input type="file" id="file-csv" name="file-csv" accept=".csv">
       </div>
 
       <div class="table-scroll">

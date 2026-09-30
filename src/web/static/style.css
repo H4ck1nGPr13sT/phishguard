@@ -130,6 +130,59 @@ button:hover {
   border: 1px solid var(--color-border);
 }
 
+.result-verdict {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.result-severity {
+  margin: 0 0 0.5rem 0;
+}
+
+.result-confidence {
+  color: var(--color-muted);
+  margin: 0 0 0.5rem 0;
+}
+
+.result-explanation {
+  margin: 0 0 0.75rem 0;
+}
+
+.result-rules {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.result-rules li {
+  margin-bottom: 0.5rem;
+}
+
+.result-rule-matched {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.result-error {
+  color: var(--sev-critical-fg);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Upload area: each file input pairs with its own analyze button,
+ * stacked on narrow viewports, staying within the 44px touch-target
+ * system established for form controls above. */
+#upload-area .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#upload-area button {
+  width: auto;
+  align-self: flex-start;
+  min-width: 10rem;
+}
+
 /* Results table needs horizontal scroll on narrow viewports instead of
  * squeezing columns unreadably small. */
 .table-scroll {
