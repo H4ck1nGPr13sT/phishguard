@@ -179,7 +179,7 @@ app = FastAPI(
                 "and Bayesian probabilistic classifier. "
                 "Provides single predictions (/predict), ensemble predictions "
                 "(/predict/ensemble), and multi-paradigm predictions (/predict/multi-paradigm).",
-    version="3.0.0",  # Updated version for Phase 6 email/SMS support
+    version="4.0.0",  # Updated version for Phase 7 image/OCR support
     lifespan=lifespan,
 )
 
