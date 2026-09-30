@@ -1,0 +1,7 @@
+type,content
+url,https://example.com/login
+sms,URGENT verify your account now
+email,"From: a@b.com
+Subject: Verify
+
+Click to verify your account"
