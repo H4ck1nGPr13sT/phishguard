@@ -127,7 +127,9 @@ class EasyOCRBackend:
 
         Args:
             image: A PIL.Image.Image or numpy array. EasyOCR's `readtext`
-                accepts either directly, so no conversion happens here.
+                does NOT accept a PIL.Image directly (it supports only a file
+                path/URL string, raw bytes, or a numpy array), so a PIL.Image
+                is converted to an RGB numpy array here before OCR.
 
         Returns:
             Recognized text strings (confidence > 0.3) joined by a single
@@ -135,9 +137,25 @@ class EasyOCRBackend:
             threshold.
         """
         reader = self._get_reader()
+        ocr_input = self._to_ocr_input(image)
         # readtext returns a list of (bbox, text, confidence) tuples.
-        results = reader.readtext(image, detail=1)
+        results = reader.readtext(ocr_input, detail=1)
         return " ".join(text for _, text, conf in results if conf > 0.3)
+
+    @staticmethod
+    def _to_ocr_input(image):
+        """Coerce `image` into a form EasyOCR's `readtext` accepts.
+
+        EasyOCR supports a file-path/URL string, raw bytes, or a numpy array —
+        but not a `PIL.Image.Image`. A PIL image is converted to an RGB numpy
+        array; strings, bytes, and numpy arrays are passed through untouched.
+        """
+        # Duck-type PIL.Image without importing PIL at module top level.
+        if hasattr(image, "convert") and hasattr(image, "size"):
+            import numpy as np
+
+            return np.asarray(image.convert("RGB"))
+        return image
 
 
 def resolve_ocr_backend() -> "OCRBackend":
