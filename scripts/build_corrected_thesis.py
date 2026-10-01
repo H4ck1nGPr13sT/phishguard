@@ -31,11 +31,10 @@ STALE_NUMBERS = ["0,9701", "0,9747", "0,9764", "0,9778", "0,9686", "0,9733",
                  "+0,0535", "+0,0685", "98,4", "97,47"]
 
 FIGURES = [
-    ("reports/figury/strona-25.png", "Rysunek A1. Architektura systemu (render s. 25 oryginału)."),
-    ("reports/figury/strona-26.png", "Rysunek A2. Architektura / przepływ danych (render s. 26 oryginału)."),
-    ("reports/figury2/zrzut-000.png", "Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału)."),
-    ("reports/figury2/zrzut-001.png", "Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału)."),
-    ("reports/figury2/zrzut-002.png", "Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału)."),
+    ("reports/figury2/diagram_architektura.png", "Rysunek A1. Architektura logiczna systemu PhishGuard (przycięty diagram, s. 25)."),
+    ("reports/figury2/zrzut-000.png", "Rysunek A2. Interfejs — zrzut ekranu (s. 48 oryginału)."),
+    ("reports/figury2/zrzut-001.png", "Rysunek A3. Interfejs — zrzut ekranu (s. 49 oryginału)."),
+    ("reports/figury2/zrzut-002.png", "Rysunek A4. Interfejs — zrzut ekranu (s. 50 oryginału)."),
 ]
 
 # ---- ERRATA block prepended to the document -------------------------------

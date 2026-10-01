@@ -2533,25 +2533,21 @@ Listingi
 > rendery odpowiednich stron PDF. Przy finalnym składzie zastąp je
 > właściwymi, przyciętymi obrazami.
 
-![Rysunek A1. Architektura systemu (render s. 25 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury/strona-25.png)
+![Rysunek A1. Architektura logiczna systemu PhishGuard (przycięty diagram, s. 25).](/Users/lukaszdrazek/Inzynierka/reports/figury2/diagram_architektura.png)
 
-*Rysunek A1. Architektura systemu (render s. 25 oryginału).*
+*Rysunek A1. Architektura logiczna systemu PhishGuard (przycięty diagram, s. 25).*
 
-![Rysunek A2. Architektura / przepływ danych (render s. 26 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury/strona-26.png)
+![Rysunek A2. Interfejs — zrzut ekranu (s. 48 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury2/zrzut-000.png)
 
-*Rysunek A2. Architektura / przepływ danych (render s. 26 oryginału).*
+*Rysunek A2. Interfejs — zrzut ekranu (s. 48 oryginału).*
 
-![Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury2/zrzut-000.png)
+![Rysunek A3. Interfejs — zrzut ekranu (s. 49 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury2/zrzut-001.png)
 
-*Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału).*
+*Rysunek A3. Interfejs — zrzut ekranu (s. 49 oryginału).*
 
-![Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury2/zrzut-001.png)
+![Rysunek A4. Interfejs — zrzut ekranu (s. 50 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury2/zrzut-002.png)
 
-*Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału).*
-
-![Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury2/zrzut-002.png)
-
-*Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału).*
+*Rysunek A4. Interfejs — zrzut ekranu (s. 50 oryginału).*
 
 
 
