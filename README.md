@@ -14,10 +14,10 @@ Multi-paradigm phishing detection system — praca inżynierska.
 | 4 — GA Optimization | ✅ | DEAP + MLflow + optymalizacja hiperparametrów i wag |
 | 5 — Rule-based + Bayesian | ✅ | 16 reguł YAML + GaussianNB + aggregation layer |
 | 6 — Email & SMS | ✅ | spaCy NLP + parser e-mail + SMS features + retrained models |
-| 7 — OCR & Visual | ⏳ | EasyOCR + brand similarity — nie zaczęte |
-| 8 — Web Interface | ⏳ | Frontend + batch CSV — nie zaczęte |
-| 9 — Explainability | ⏳ | SHAP/LIME + dashboard — nie zaczęte |
-| 10 — Dokumentacja | ⏳ | Dokumentacja akademicka — nie zaczęte |
+| 7 — OCR & Visual | ✅ | EasyOCR + cechy wizualne/podobieństwo marki dla obrazów |
+| 8 — Web Interface | ✅ | Frontend (web UI) + batch CSV, serwowane przez `src/api` |
+| 9 — Explainability | ✅ | SHAP TreeExplainer + dashboard wyjaśnień (`/explain`) |
+| 10 — Dokumentacja | ⏳ | Dokumentacja akademicka (architektura, algorytmy, ewaluacja) — w toku |
 
 ## Wymagania
 
@@ -53,45 +53,63 @@ cp .env.example .env
 ```bash
 source .venv/bin/activate
 uvicorn src.api.main:app --reload
+# Web UI (formularz + dashboard wyjaśnień): http://localhost:8000/
 # Swagger UI: http://localhost:8000/docs
 ```
+
+`src.api.main` serwuje jednocześnie REST API, web UI (Faza 8) i dashboard
+wyjaśnień SHAP (Faza 9) — jeden proces `uvicorn`, bez osobnego frontend
+buildu. Zmienne środowiskowe OpenMP (`KMP_DUPLICATE_LIB_OK`,
+`OMP_NUM_THREADS`) wymagane przez równoczesne działanie XGBoost i innych
+bibliotek z własnym runtime'em OpenMP są ustawiane programowo na początku
+`src/api/main.py` — nie trzeba ich eksportować ręcznie przed uruchomieniem.
 
 ## Endpointy API
 
 | Endpoint | Opis |
 |----------|------|
+| `GET /` | Web UI — formularz predykcji + dashboard wyjaśnień (Faza 8) |
 | `GET /health` | Status załadowanych modeli |
+| `GET /api/info` | Metadane API (wersja, dostępne modele) |
 | `POST /predict` | Szybka analiza URL (Random Forest) |
 | `POST /predict/ensemble` | 7 klasyfik. + disagreement score |
 | `POST /predict/multi-paradigm` | Pełny system: ML + reguły + Bayesian |
 | `POST /predict/email` | Analiza tekstu e-maila |
 | `POST /predict/email/file` | Upload pliku .eml (max 5MB) |
 | `POST /predict/sms` | Analiza wiadomości SMS |
+| `POST /predict/image` | Analiza obrazu (OCR + cechy wizualne, Faza 7) |
+| `POST /explain` | Wyjaśnienie decyzji (SHAP TreeExplainer, Faza 9) |
+| `POST /batch` | Predykcja wsadowa (CSV upload, Faza 8) |
+| `GET /batch/{job_id}` | Status/wynik zadania wsadowego |
 
 ## Testy
 
 ```bash
 source .venv/bin/activate
 pytest tests/ -v
-# Oczekiwane: ~388 testów
+# Oczekiwane: ~452 testy (1 pominięty)
 ```
 
 ## Struktura projektu
 
 ```
 src/
-├── api/            — FastAPI endpoints + Pydantic models
+├── api/            — FastAPI endpoints (predict/explain/batch) + web.py (UI) + Pydantic models
 ├── config/         — settings.py (dotenv, paths)
 ├── data/           — downloaders, validators, preprocessors, pipeline
-├── features/       — url_features, email_features, text_features, sms_features, extractors
+├── features/       — url_features, email_features, text_features, sms_features,
+│                     image_features + ocr/ (EasyOCR), extractors
 ├── models/         — classifiers, ensemble, disagreement, train, predict, evaluate
 ├── optimization/   — GA (DEAP), MLflow, model registry, feature selection
 ├── paradigms/      — rules/ (engine + YAML), bayesian/, aggregation/
+├── explainability/ — SHAP TreeExplainer wrapper (Faza 9)
 └── utils/          — cache, logging
 
 models/             — wytrenowane modele (.joblib) — w repo, gotowe do użycia
-scripts/            — skrypty do retreningu modeli
-tests/              — ~388 testów (pytest)
+reports/            — raporty ewaluacji (PDF/CSV) generowane przez scripts/generate_eval_report.py
+docs/               — dokumentacja architektury, przepływu danych, API i teorii algorytmów
+scripts/            — skrypty do retreningu modeli i generowania raportów
+tests/              — ~452 testy (pytest)
 .planning/          — GSD roadmap, state, fazy
 ```
 
@@ -108,6 +126,13 @@ Po klonowaniu modele są gotowe — nie trzeba retrenować.
 ## Cache i dane
 
 Katalogi `data/` i `cache/` są w `.gitignore`. Regenerują się automatycznie przy pierwszym uruchomieniu pipeline lub uruchomieniu testów integracyjnych.
+
+## Dokumentacja
+
+- [docs/architecture.md](docs/architecture.md) — statyczna struktura systemu (diagram komponentów)
+- [docs/data-flow.md](docs/data-flow.md) — przepływ żądania w czasie działania
+- [docs/api.md](docs/api.md) — pełny opis endpointów REST API
+- [docs/algorithms/](docs/algorithms/README.md) — teoria algorytmów na poziomie pracy inżynierskiej (pipeline danych, 7 klasyfikatorów, zespoły, i kolejno: GA, system regułowy, Bayes, agregacja, OCR/wizja, wyjaśnialność)
 
 ## Kontekst akademicki
 
