@@ -319,3 +319,90 @@ button:hover {
   background: var(--sev-critical-bg);
   color: var(--sev-critical-fg);
 }
+
+/* ---------------------------------------------------------------------
+ * Explainability dashboard (Phase 9) — Explain button + hand-rolled
+ * inline-SVG charts (classifier comparison, SHAP). Charts are built by
+ * app.js into #classifier-chart/#shap-chart, wrapped in .chart-scroll
+ * so they scale/scroll on narrow viewports instead of overflowing.
+ * ------------------------------------------------------------------- */
+
+#explain-btn {
+  margin-top: 0.75rem;
+  width: auto;
+  min-width: 10rem;
+}
+
+.dashboard {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.dashboard h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.dashboard-rules {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.dashboard-rules li {
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-explanation,
+.dashboard-disagreement {
+  margin: 0 0 0.75rem 0;
+}
+
+.chart-scroll,
+#classifier-chart,
+#shap-chart {
+  overflow-x: auto;
+}
+
+.bar-chart,
+#classifier-chart svg,
+#shap-chart svg {
+  display: block;
+  max-width: 100%;
+}
+
+.bar-phishing {
+  fill: var(--sev-critical-fg);
+}
+
+.bar-legit {
+  fill: var(--sev-low-fg);
+}
+
+.bar-label,
+.bar-value {
+  font-size: 0.7rem;
+  fill: var(--color-text);
+}
+
+.shap-chart-wrap .shap-axis-label,
+.shap-chart-wrap .shap-note {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0.5rem 0;
+}
+
+/* Narrow-viewport fallback: force horizontal scroll instead of letting
+ * the fixed-width SVG charts squeeze/overflow the card. */
+@media (max-width: 480px) {
+  #classifier-chart,
+  #shap-chart {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #classifier-chart svg,
+  #shap-chart svg {
+    max-width: none;
+  }
+}

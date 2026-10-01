@@ -204,6 +204,162 @@ function renderError(message) {
 }
 
 /* ---------------------------------------------------------------------
+ * Explainability dashboard — hand-rolled inline-SVG charts (no CDN deps)
+ *
+ * Every node below is built with document.createElementNS/createElement
+ * + setAttribute + textContent ONLY — never a raw-HTML-injection DOM
+ * sink (see the file-header rule above). SHAP feature names and rule
+ * text are model/attacker-adjacent and must never touch such a sink
+ * (T-09-11).
+ * ------------------------------------------------------------------- */
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+/**
+ * Render a horizontal bar chart of 0..1 probability values (the 7 ML
+ * classifiers + rules + bayesian paradigm, EXPL-03) into `container`.
+ * items: [{label, value}].
+ */
+function renderClassifierChart(container, items) {
+  const width = 420;
+  const barHeight = 24;
+  const gap = 8;
+  const chartLeft = 130;
+  const chartRight = width - 10;
+
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("width", String(width));
+  svg.setAttribute("height", String(items.length * (barHeight + gap)));
+  svg.setAttribute("viewBox", "0 0 " + width + " " + items.length * (barHeight + gap));
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "Classifier comparison chart: phishing probability per classifier, rules, and Bayesian paradigm");
+
+  items.forEach((item, i) => {
+    const y = i * (barHeight + gap);
+    const value = Math.max(0, Math.min(1, item.value));
+
+    const rect = document.createElementNS(SVG_NS, "rect");
+    rect.setAttribute("x", String(chartLeft));
+    rect.setAttribute("y", String(y));
+    rect.setAttribute("width", String(value * (chartRight - chartLeft)));
+    rect.setAttribute("height", String(barHeight));
+    rect.setAttribute("class", value > 0.5 ? "bar-phishing" : "bar-legit");
+    svg.appendChild(rect);
+
+    const label = document.createElementNS(SVG_NS, "text");
+    label.setAttribute("x", "0");
+    label.setAttribute("y", String(y + barHeight - 6));
+    label.setAttribute("class", "bar-label");
+    label.textContent = item.label;
+    svg.appendChild(label);
+
+    const valueLabel = document.createElementNS(SVG_NS, "text");
+    valueLabel.setAttribute("x", String(chartLeft + value * (chartRight - chartLeft) + 4));
+    valueLabel.setAttribute("y", String(y + barHeight - 6));
+    valueLabel.setAttribute("class", "bar-value");
+    valueLabel.textContent = (value * 100).toFixed(1) + "%";
+    svg.appendChild(valueLabel);
+  });
+
+  container.replaceChildren(svg);
+}
+
+/**
+ * Render a diverging horizontal bar chart of SHAP top_features
+ * (EXPL-02, URL-only v1) into `container`. Positive shap_value pushes
+ * toward phishing, negative toward legitimate. Axis is labeled
+ * "relative contribution" (Pitfall 5 — standardized-feature space, not
+ * a raw probability unit). When shap.available is false, render the
+ * note text instead of a chart.
+ */
+function renderShapChart(container, shap) {
+  const wrap = document.createElement("div");
+  wrap.className = "shap-chart-wrap";
+
+  const heading = document.createElement("h3");
+  setText(heading, "SHAP feature importance — URL only (v1)");
+  wrap.appendChild(heading);
+
+  if (!shap || !shap.available) {
+    const note = document.createElement("p");
+    note.className = "shap-note";
+    setText(note, (shap && shap.note) || "SHAP explanation not available for this request.");
+    wrap.appendChild(note);
+    container.replaceChildren(wrap);
+    return;
+  }
+
+  const features = shap.top_features || [];
+  const width = 480;
+  const barHeight = 22;
+  const gap = 8;
+  const rowHeight = barHeight + gap;
+  const centerX = width / 2;
+  const labelColWidth = 150;
+  const maxHalfWidth = (width - labelColWidth) / 2 - 10;
+
+  const maxAbs = features.reduce((m, f) => Math.max(m, Math.abs(f.shap_value)), 0) || 1;
+
+  const axisLabel = document.createElement("p");
+  axisLabel.className = "shap-axis-label";
+  setText(axisLabel, "Axis: relative contribution (standardized-feature space)");
+  wrap.appendChild(axisLabel);
+
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("width", String(width));
+  svg.setAttribute("height", String(features.length * rowHeight));
+  svg.setAttribute("viewBox", "0 0 " + width + " " + features.length * rowHeight);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "SHAP feature importance chart, relative contribution, URL only");
+
+  features.forEach((f, i) => {
+    const y = i * rowHeight;
+    const magnitude = (Math.abs(f.shap_value) / maxAbs) * maxHalfWidth;
+    const isPositive = f.shap_value >= 0;
+
+    const rect = document.createElementNS(SVG_NS, "rect");
+    rect.setAttribute("y", String(y));
+    rect.setAttribute("height", String(barHeight));
+    rect.setAttribute("width", String(magnitude));
+    rect.setAttribute(
+      "x",
+      String(isPositive ? centerX : centerX - magnitude)
+    );
+    rect.setAttribute("class", isPositive ? "bar-phishing" : "bar-legit");
+    svg.appendChild(rect);
+
+    const label = document.createElementNS(SVG_NS, "text");
+    label.setAttribute("x", "0");
+    label.setAttribute("y", String(y + barHeight - 6));
+    label.setAttribute("class", "bar-label");
+    label.textContent = f.feature + " (" + f.raw_value + ")";
+    svg.appendChild(label);
+
+    const valueLabel = document.createElementNS(SVG_NS, "text");
+    valueLabel.setAttribute(
+      "x",
+      String(isPositive ? centerX + magnitude + 4 : centerX - magnitude - 4)
+    );
+    valueLabel.setAttribute("y", String(y + barHeight - 6));
+    valueLabel.setAttribute("class", "bar-value");
+    valueLabel.setAttribute("text-anchor", isPositive ? "start" : "end");
+    valueLabel.textContent = (f.shap_value >= 0 ? "+" : "") + f.shap_value.toFixed(4);
+    svg.appendChild(valueLabel);
+  });
+
+  wrap.appendChild(svg);
+
+  if (shap.note) {
+    const note = document.createElement("p");
+    note.className = "shap-note";
+    setText(note, shap.note);
+    wrap.appendChild(note);
+  }
+
+  container.replaceChildren(wrap);
+}
+
+/* ---------------------------------------------------------------------
  * Paste-text flow (url/email/sms)
  * ------------------------------------------------------------------- */
 
