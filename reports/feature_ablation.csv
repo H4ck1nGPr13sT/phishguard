@@ -1,0 +1,16 @@
+content_type,group,baseline_accuracy,ablated_accuracy,delta,note
+url,url.binary,0.94,0.5,0.43999999999999995,held-out URL test split (50 samples)
+url,url.structure,0.94,0.68,0.2599999999999999,held-out URL test split (50 samples)
+url,url.length,0.94,0.88,0.05999999999999994,held-out URL test split (50 samples)
+url,url.char,0.94,0.88,0.05999999999999994,held-out URL test split (50 samples)
+email,header,1.0,0.85,0.15000000000000002,training-data sensitivity (no held-out split exists); not a generalization claim
+email,lexical,1.0,0.985,0.015000000000000013,training-data sensitivity (no held-out split exists); not a generalization claim
+email,sentiment,1.0,0.985,0.015000000000000013,training-data sensitivity (no held-out split exists); not a generalization claim
+email,stylometric,1.0,0.99,0.010000000000000009,training-data sensitivity (no held-out split exists); not a generalization claim
+email,syntactic,1.0,1.0,0.0,training-data sensitivity (no held-out split exists); not a generalization claim
+sms,sms_specific,1.0,0.51,0.49,training-data sensitivity (no held-out split exists); not a generalization claim
+sms,lexical,1.0,1.0,0.0,training-data sensitivity (no held-out split exists); not a generalization claim
+sms,syntactic,1.0,1.0,0.0,training-data sensitivity (no held-out split exists); not a generalization claim
+sms,stylometric,1.0,1.0,0.0,training-data sensitivity (no held-out split exists); not a generalization claim
+sms,sentiment,1.0,1.0,0.0,training-data sensitivity (no held-out split exists); not a generalization claim
+image,visual,N/A,N/A,N/A,N/A: no trained classifier. No trained classifier consumes these features; visual signal is heuristic-only - see _visual_signal_probability() (5 features)
