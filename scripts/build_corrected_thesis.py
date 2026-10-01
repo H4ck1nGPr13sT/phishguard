@@ -165,6 +165,13 @@ def clean(text: str) -> str:
         # corrected Chapter 5); keep TOC lines (they have the " — <page>" leader)
         if " — " not in s and any(tok in s for tok in STALE_NUMBERS):
             continue
+        # U11 — drop garbled ASCII diagrams / spaced-out listings (clean versions
+        # live in Załącznik A as an image and in Załącznik B as source code).
+        if any(ch in s for ch in "│┌┐└┘├┤┬┴┼"):
+            continue
+        toks = s.split()
+        if len(toks) >= 6 and sum(1 for t in toks if len(t) == 1) / len(toks) > 0.5:
+            continue
         out.append(s)
     return "\n".join(out)
 

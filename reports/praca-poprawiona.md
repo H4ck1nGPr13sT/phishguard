@@ -952,29 +952,6 @@ System integruje się z następującymi komponentami zewnętrznymi:
 PhishGuard zaprojektowano w architekturze trójwarstwowej z modularnym podziałem warstwy
 logiki:
 
-┌────────────────────────────────────────────────────────────────────┐
-│                               Warstwa prezentacji                                        │
-│   Swagger UI · klienci HTTP (curl, Postman) · frontend /app                              │
-└─────────────────────────────┬──────────────────────────────────────┘
-                                 │           H      T   T      P    /    J    S      O     N
-┌─────────────────────────────▼──────────────────────────────────────┐
-│                     Warstwa logiki (FastAPI, Pydantic)                                   │
-│   /predict · /predict/ensemble · /predict/multi-paradigm                                 │
-│   /predict/email · /predict/email/file · /predict/sms · /health                          │
-│                                                                                          │
-│   ┌────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ │
-│   │ Ekstrakcja │ │        Klasyfika-      │ │     Algorytm       │ │   Agregator       │ │
-│   │      cech      │ │    tory ML +       │ │     genetyczny     │ │   paradygma -     │ │
-│   │ (URL/Email │ │        ensembles       │ │     (DEAP) +       │ │    tów (ML +      │ │
-│   │     /SMS/Text)│ │     (sklearn)       │ │     MLflow         │ │   Rules +         │ │
-│   │                │ │                    │ │                    │ │   Bayes)          │ │
-│   └────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ │
-└─────────────────────────────┬──────────────────────────────────────┘
-                                 │
-┌─────────────────────────────▼──────────────────────────────────────┐
-│                               Warstwa danych                                             │
-│   models/*.joblib · data/ · cache/ · mlruns/ · phishing_rules.yaml                       │
-└────────────────────────────────────────────────────────────────────┘
 
 Rysunek 1. Architektura logiczna systemu PhishGuard.
 
@@ -1054,11 +1031,6 @@ Entropia Shannona obliczana jest dla całej dziedziny URL i jest skutecznym dete
 zaciemniania adresu losowymi ciągami znaków (typowymi dla automatycznie generowanych
 adresów phishingowych):
 
-d e f       c a l c u l a t e _ e n t r o p y ( t e x t :                                       s t r )         - >             f l o a t :
-    i           f                       n            o           t                          t           e           x                t        :
-            r           e               t            u               r          n                               0                .            0
-    c       o   u       n       t   s            =           C       o     u    n       t       e   r       (       t       e       x     t   )
-    l       e       n       g       t        h           =                  l       e       n       (       t           e       x        t    )
 
 
 
@@ -1274,17 +1246,12 @@ ponieważ traci informację o stopniu pewności. Stacking uczy oddzielny meta-mo
 danych, predykcje bazowe generowane są w trakcie pięciokrotnej walidacji krzyżowej, czyli
 każda predykcja pochodzi z modelu, który tej próbki nie widział w treningu.
 
-e   n       s   e   m   b   l       e       =       S   t   a    c       k   i   n   g       C   l   a   s       s   i   f   i       e   r   (
-        e       s   t   i       m       a   t   o       r   s        =       e   s       t       i   m       a       t   o       r       s   ,
         final_estimator=LogisticRegression(class_weight='balanced',
                                                                 max_iter=1000,                       random_state=42),
 
 
 
     c                                 v                                        =                                       5                           ,
-    s    t    a       c       k           _       m           e   t       h        o       d   =           '       a           u       t   o   '   ,
-    p     a       s       s       t           h           r       o       u        g       h       =           F           a       l       s   e   ,
-    n         _               j                       o               b                s               =                       -           1       ,
 )
 
 Listing 2. Konfiguracja meta-modelu w stacking ensemble (src/models/ensemble.py).
@@ -1433,11 +1400,7 @@ Przykładowa zawartość pliku metadanych po wykonaniu optymalizacji dla regresj
 (najlepszy z siedmiu klasyfikatorów po GA, F1=0,9749):
 
 {
-    "       c       l           a       s           s        i           f           i       e       r           _       n               a       m           e           "       :                       "       l           r           "    ,
     "hyperparameters": { "C": 7.974174081913068, "penalty": "l2" },
-    "   f       i       t        n      e        s       s       "       :                   0   .       9       7       4           8       7       1       7       9       4           8       7       1       7   9           4       8    ,
-    " t i m e s t a m p " :                                                                  " 2 0 2 6 - 0 2 - 1 1                                                               2 3 : 5 2 : 4 2 " ,
-    "       m   o           d       e       l        _       t       y           p       e       "       :               "           g       a       _           o       p           t       i       m       i       z           e       d    "
 }
 
 Listing                     4.                  Przykład                             metadanych                                  modelu                              po                      optymalizacji                                   GA
@@ -1455,23 +1418,11 @@ src/paradigms/rules/engine.py) i waliduje go schemat Pydantic.
 
 
 Struktura reguły
--               n               a           m           e        :                           s       h           o               r           t           e           n               e           d           _           u           r        l
     description:                                             "URL                    uses                known                           URL             shortening                                              service"
-    w               e                       i                    g                       h                   t                   :                                               0                   .                       2                0
-    c       a       t            e          g        o           r           y           :                   u       r           l           _           s           t           r           u       c           t           u           r    e
-    c                       o                        n                           d                       i                           t                           i                           o                       n                        :
-        t           y            p              e            :                           d           o           m               a               i           n               _           m               a           t               c        h
-        f               e               a               t                u               r               e               :                                   d               o                   m               a               i            n
-        d                               o                                m                               a                                   i                               n                                   s                            :
-            -                                                                b                               i                               t                                   .                               l                            y
-            -                                    t                   i                   n               y                   u                   r                   l                   .                   c               o                m
-            -                                                                g                               o                               o                                   .                               g                            l
             -                                                                                        t                                               .                                               c                                        o
 
 
 
-         -                           o               w               .               l            y
-         -                           i               s               .               g            d
          - buff.ly
 
 Listing      3.   Przykład   definicji   reguły      wykrywającej        skrócone     adresy   URL
@@ -1565,7 +1516,6 @@ czyli:
 
                                                    𝑛
 
-                                   𝑃(𝑋 ∣ 𝐶) = ∏ 𝑃 (𝑥𝑖 ∣ 𝐶)
                                                  𝑖=1
 
 
