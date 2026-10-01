@@ -2603,3 +2603,148 @@ Listingi
 
 *Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału).*
 
+
+
+# Załącznik B — wybrane listingi kodu (czyste, z repozytorium)
+
+**Miara rozbieżności (poprawiona normalizacja)** (`src/paradigms/aggregation/disagreement.py`):
+
+```python
+"""Cross-paradigm disagreement detection using normalized Shannon entropy.
+
+Extends Phase 3 classifier disagreement approach to detect disagreements
+between the three paradigms: ML ensemble, rule-based, and Bayesian.
+
+Key differences from classifier disagreement:
+- 3 paradigms vs 7 classifiers
+- Max entropy for 3 paradigms: log2(3) = 1.585
+- Different probability scales (ML proba, rule score, Bayesian posterior)
+"""
+
+import numpy as np
+from scipy.stats import entropy
+from typing import Dict, List, Tuple
+
+# Threshold for edge case detection (consistent with Phase 3)
+PARADIGM_DISAGREEMENT_THRESHOLD = 0.7
+
+
+def calculate_paradigm_disagreement(
+    ml_prediction: str,
+    ml_probability: float,
+    rule_prediction: str,
+    rule_probability: float,
+    bayesian_prediction: str,
+    bayesian_probability: float
+) -> Dict:
+    """Calculate disagreement across three paradigms.
+
+    Args:
+        ml_prediction: 'phishing' or 'legitimate' from ML ensemble
+        ml_probability: Phishing probability from ML (0-1)
+        rule_prediction: 'phishing' or 'legitimate' from rules
+        rule_probability: Rule score (0-1)
+        bayesian_prediction: 'phishing' or 'legitimate' from Bayesian
+        bayesian_probability: Posterior phishing probability (0-1)
+
+    Returns:
+        Dict with:
+            'score': Normalized entropy (0-1)
+            'is_edge_case': True if score > threshold
+            'vote_distribution': {'phishing': N, 'legitimate': M}
+            'probability_variance': Variance across paradigm probabilities
+            'disagreeing_paradigms': List of paradigms disagreeing with majority
+            'probability_spread': Max - min probability across paradigms
+    """
+    predictions = {
+        'ml_ensemble': ml_prediction,
+        'rules': rule_prediction,
+        'bayesian': bayesian_prediction
+    }
+    probabilities = [ml_probability, rule_probability, bayesian_probability]
+
+    # Count votes
+    votes = {}
+    for paradigm, pred in predictions.items():
+        votes[pred] = votes.get(pred, 0) + 1
+
+    # Convert to binary for entropy calculation
+    binary_preds = [1 if pred == 'phishing' else 0
+                   for pred in predictions.values()]
+
+    # C
+```
+
+**Wagi paradygmatów (ML 0,5 / reguły 0,3 / Bayes 0,2)** (`src/paradigms/aggregation/weights.py`):
+
+```python
+"""Paradigm weight management for multi-paradigm aggregation.
+
+Default weights: ML ensemble (0.5), Rules (0.3), Bayesian (0.2)
+based on Phase 5 research recommendations.
+"""
+
+from dataclasses import dataclass, field
+from typing import Dict
+
+
+@dataclass
+class ParadigmWeights:
+    """Configurable weights for paradigm aggregation.
+
+    Weights must sum to 1.0 and stay within bounds:
+    - ML ensemble: 0.4-0.6 (dominant but not overwhelming)
+    - Rules: 0.2-0.4 (interpretable contribution)
+    - Bayesian: 0.1-0.3 (probabilistic complement)
+
+    Attributes:
+        ml_ensemble: Weight for ML ensemble prediction
+        rules: Weight for rule-based system score
+        bayesian: Weight for Bayesian posterior
+    """
+
+    ml_ensemble: float = 0.5
+    rules: float = 0.3
+    bayesian: float = 0.2
+
+    def __post_init__(self):
+        """Validate weights after initialization."""
+        self._validate()
+
+    def _validate(self):
+        """Ensure weights sum to 1.0 and are in valid ranges."""
+        total = self.ml_ensemble + self.rules + self.bayesian
+        if abs(total - 1.0) > 1e-6:
+            raise ValueError(
+                f"Weights must sum to 1.0, got {total:.4f}. "
+                f"ML={self.ml_ensemble}, Rules={self.rules}, Bayesian={self.bayesian}"
+            )
+
+        # Bound validation (soft warning, not error)
+        if not (0.4 <= self.ml_ensemble <= 0.6):
+            import warnings
+            warnings.warn(
+                f"ML ensemble weight {self.ml_ensemble} outside recommended range [0.4, 0.6]"
+            )
+        if not (0.2 <= self.rules <= 0.4):
+            import warnings
+            warnings.warn(
+                f"Rules weight {self.rules} outside recommended range [0.2, 0.4]"
+            )
+        if not (0.1 <= self.bayesian <= 0.3):
+            import warnings
+            warnings.warn(
+                f"Bayesian weight {self.bayesian} outside recommended range [0.1, 0.3]"
+            )
+
+    def to_dict(self) -> Dict[str, float]:
+        """Return weights as dictionary."""
+        return {
+            'ml_ensemble': self.ml_ensemble,
+            'rules': self.rules,
+            'bayesian': self.bayesian
+        }
+
+    @classmetho
+```
+

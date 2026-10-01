@@ -220,10 +220,44 @@ def main():
         p = ROOT / rel
         if p.exists():
             md += f"![{cap}]({p})\n\n*{cap}*\n\n"
+    # U11 — czyste listingi z rzeczywistego kodu (zamiast zniekształconych z PDF)
+    md += "\n\n# Załącznik B — wybrane listingi kodu (czyste, z repozytorium)\n\n"
+    for path, title in [
+        ("src/paradigms/aggregation/disagreement.py", "Miara rozbieżności (poprawiona normalizacja)"),
+        ("src/paradigms/aggregation/weights.py", "Wagi paradygmatów (ML 0,5 / reguły 0,3 / Bayes 0,2)"),
+    ]:
+        p = ROOT / path
+        if p.exists():
+            code = p.read_text(encoding="utf-8")[:2200]
+            md += f"**{title}** (`{path}`):\n\n```python\n{code}\n```\n\n"
     OUT_MD.write_text(md, encoding="utf-8")
     subprocess.run(["pandoc", str(OUT_MD), "-o", str(OUT_DOCX)], check=True)
+    _apply_wszib_styles(OUT_DOCX)
     print(f"OK -> {OUT_DOCX.relative_to(ROOT)} ({OUT_DOCX.stat().st_size} B)")
     return 0
+
+
+def _apply_wszib_styles(path):
+    """Apply the WSZiB editorial standard: Times New Roman 12 pt, 1.5 line
+    spacing, justified body, 2.5 cm margins, bold headings 16/14 pt, left."""
+    from docx import Document
+    from docx.shared import Pt, Cm
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    d = Document(str(path))
+    for s in d.sections:
+        s.left_margin = s.right_margin = s.top_margin = s.bottom_margin = Cm(2.5)
+    n = d.styles["Normal"]
+    n.font.name = "Times New Roman"; n.font.size = Pt(12)
+    n.paragraph_format.line_spacing = 1.5
+    n.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    for name, size in [("Heading 1", 16), ("Heading 2", 14), ("Heading 3", 12), ("Title", 18)]:
+        try:
+            st = d.styles[name]
+            st.font.name = "Times New Roman"; st.font.size = Pt(size); st.font.bold = True
+            st.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        except KeyError:
+            pass
+    d.save(str(path))
 
 
 if __name__ == "__main__":
