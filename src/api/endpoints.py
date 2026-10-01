@@ -81,7 +81,16 @@ def _visual_signal_probability(visual_dict: dict) -> float:
     return float(min(max(score, 0.0), 1.0))
 
 
-@router.get("/api/info", tags=["root"])
+@router.get(
+    "/api/info",
+    tags=["root"],
+    summary="Get API service info",
+    description=(
+        "Returns the service name, version, and the list of available "
+        "endpoints. GET / serves the HTML web UI instead (see src/api/web.py)."
+    ),
+    response_description="Service metadata and endpoint list",
+)
 def api_info():
     """API information endpoint (moved from GET / in Phase 8 — GET /
     now serves the HTML web UI; see src/api/web.py)."""
@@ -103,7 +112,19 @@ def api_info():
     }
 
 
-@router.get("/health", response_model=HealthResponse, tags=["health"])
+@router.get(
+    "/health",
+    response_model=HealthResponse,
+    tags=["health"],
+    summary="Check service and model-loading health",
+    description=(
+        "Reports overall service status plus which models are currently "
+        "loaded (primary URL classifier, email ensemble, SMS ensemble, OCR "
+        "backend). Returns status=unhealthy when the primary URL model is "
+        "not loaded."
+    ),
+    response_description="Health status and per-model loaded flags",
+)
 def health():
     """Health check endpoint."""
     return HealthResponse(
@@ -115,7 +136,19 @@ def health():
     )
 
 
-@router.post("/predict", response_model=PredictionResponse, tags=["prediction"])
+@router.post(
+    "/predict",
+    response_model=PredictionResponse,
+    tags=["prediction"],
+    summary="Fast single-model phishing prediction for a URL",
+    description=(
+        "Extracts the 30 URL features and runs the primary (GA-optimized "
+        "Random Forest) classifier for a low-latency phishing probability. "
+        "For a richer verdict combining 7 classifiers, rules, and a "
+        "Bayesian posterior, use /predict/multi-paradigm instead."
+    ),
+    response_description="Phishing probability, binary verdict, confidence, and processing time",
+)
 def predict(request: URLRequest):
     """
     Predict phishing probability for URL.
@@ -158,7 +191,20 @@ def predict(request: URLRequest):
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 
-@router.post("/predict/ensemble", response_model=EnsemblePredictionResponse, tags=["prediction"])
+@router.post(
+    "/predict/ensemble",
+    response_model=EnsemblePredictionResponse,
+    tags=["prediction"],
+    summary="Phishing prediction from all 7 ML classifiers with disagreement detection",
+    description=(
+        "Runs the URL through all 7 classifiers (RF, SVM, MLP, XGBoost, "
+        "LogReg, NaiveBayes, DecisionTree) in the voting ensemble and "
+        "returns each individual verdict plus the soft-voting ensemble "
+        "result. Flags edge cases where classifier disagreement exceeds "
+        "the configured threshold."
+    ),
+    response_description="Ensemble verdict, per-classifier breakdown, and disagreement info",
+)
 def predict_ensemble(request: URLRequest):
     """
     Predict phishing using ensemble of 7 classifiers with disagreement detection.
@@ -215,7 +261,22 @@ def predict_ensemble(request: URLRequest):
         raise HTTPException(status_code=500, detail=f"Ensemble prediction failed: {str(e)}")
 
 
-@router.post("/predict/multi-paradigm", response_model=MultiParadigmResponse, tags=["prediction"])
+@router.post(
+    "/predict/multi-paradigm",
+    response_model=MultiParadigmResponse,
+    tags=["prediction"],
+    summary="Full multi-paradigm phishing verdict for a URL",
+    description=(
+        "Runs the URL through all three paradigms (7-classifier ML "
+        "ensemble, weighted rule engine, Bayesian posterior) and returns "
+        "an aggregated verdict with a cross-paradigm disagreement score. "
+        "This is the endpoint that demonstrates the thesis's core value: "
+        "disagreement between paradigms as an additional diagnostic "
+        "signal, alongside per-paradigm weighted contributions and the "
+        "list of fired rules."
+    ),
+    response_description="Aggregated verdict with per-paradigm contributions, fired rules, and disagreement info",
+)
 def predict_multi_paradigm(request: URLRequest):
     """
     Predict phishing using all three paradigms: ML ensemble, rule-based, Bayesian.
@@ -317,7 +378,23 @@ def predict_multi_paradigm(request: URLRequest):
         )
 
 
-@router.post("/explain", response_model=ExplainResponse, tags=["explainability"])
+@router.post(
+    "/explain",
+    response_model=ExplainResponse,
+    tags=["explainability"],
+    summary="Consolidated explainability report for a URL verdict",
+    description=(
+        "Runs SHAP TreeExplainer (URL-only, RF) and consolidates it with "
+        "the already-computed fired rules, all 7 individual ML "
+        "predictions, and cross-paradigm disagreement into one response. "
+        "Slower than /predict/multi-paradigm (SHAP is never run on the "
+        "fast prediction path by design) — use this endpoint only when "
+        "an explanation, not just a verdict, is needed. Demonstrates "
+        "cross-paradigm disagreement as an additional diagnostic signal "
+        "alongside feature-level SHAP attribution."
+    ),
+    response_description="SHAP top features, per-classifier predictions, fired rules, and disagreement explanation",
+)
 def explain(request: URLRequest):
     """
     Consolidated on-demand explainability endpoint (Phase 9).
@@ -471,7 +548,18 @@ def explain(request: URLRequest):
         raise HTTPException(status_code=500, detail=f"Explain failed: {str(e)}")
 
 
-@router.post("/predict/email", response_model=EmailSMSResponse, tags=["prediction"])
+@router.post(
+    "/predict/email",
+    response_model=EmailSMSResponse,
+    tags=["prediction"],
+    summary="Phishing prediction for raw email text",
+    description=(
+        "Extracts header features (SPF/DKIM/sender) and NLP text features "
+        "from a raw email body/headers string, then classifies with the "
+        "trained email ensemble."
+    ),
+    response_description="Phishing verdict, probability, confidence, and explanation for the email text",
+)
 def predict_email(request: EmailTextRequest):
     """
     Predict phishing probability for raw email text.
@@ -518,7 +606,18 @@ def predict_email(request: EmailTextRequest):
         raise HTTPException(status_code=500, detail=f"Email prediction failed: {str(e)}")
 
 
-@router.post("/predict/email/file", response_model=EmailSMSResponse, tags=["prediction"])
+@router.post(
+    "/predict/email/file",
+    response_model=EmailSMSResponse,
+    tags=["prediction"],
+    summary="Phishing prediction for an uploaded .eml email file",
+    description=(
+        "Accepts a .eml file upload (max 5MB), parses the email, extracts "
+        "header and text features, and classifies with the trained email "
+        "ensemble."
+    ),
+    response_description="Phishing verdict, probability, confidence, and explanation for the uploaded email",
+)
 async def predict_email_file(
     file: Annotated[UploadFile, File(description="Email file in .eml format")]
 ):
@@ -595,7 +694,18 @@ async def predict_email_file(
         raise HTTPException(status_code=500, detail=f"Email file prediction failed: {str(e)}")
 
 
-@router.post("/predict/sms", response_model=EmailSMSResponse, tags=["prediction"])
+@router.post(
+    "/predict/sms",
+    response_model=EmailSMSResponse,
+    tags=["prediction"],
+    summary="Phishing prediction for an SMS/chat message",
+    description=(
+        "Extracts SMS-specific features (shortened URLs, call-to-action "
+        "phrasing, segment count, etc.) and NLP text features, then "
+        "classifies with the trained SMS ensemble."
+    ),
+    response_description="Phishing verdict, probability, confidence, and explanation for the SMS text",
+)
 def predict_sms(request: SMSRequest):
     """
     Predict phishing probability for SMS/chat message.
@@ -641,7 +751,21 @@ def predict_sms(request: SMSRequest):
         raise HTTPException(status_code=500, detail=f"SMS prediction failed: {str(e)}")
 
 
-@router.post("/predict/image", response_model=EmailSMSResponse, tags=["prediction"])
+@router.post(
+    "/predict/image",
+    response_model=EmailSMSResponse,
+    tags=["prediction"],
+    summary="Phishing prediction for an uploaded screenshot/photo (OCR + visual)",
+    description=(
+        "Accepts a PNG/JPG upload (max 8MB), runs OCR once to extract "
+        "text, feeds the OCR text into the existing email/text model, "
+        "runs rule-engine keyword matching against the OCR text, and "
+        "computes a perceptual-hash brand-similarity/layout visual "
+        "signal. All three signals are combined via the existing "
+        "multi-paradigm aggregator for a single verdict."
+    ),
+    response_description="Phishing verdict with visual brand-similarity info plus the usual paradigm contributions",
+)
 async def predict_image(
     file: Annotated[UploadFile, File(description="Image file (.png/.jpg/.jpeg)")]
 ):

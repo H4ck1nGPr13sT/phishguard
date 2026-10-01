@@ -1,0 +1,1353 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PhishGuard API",
+    "description": "REST API for URL phishing detection using multi-paradigm analysis. Combines ML ensemble (7 classifiers), rule-based expert system, and Bayesian probabilistic classifier. Provides single predictions (/predict), ensemble predictions (/predict/ensemble), and multi-paradigm predictions (/predict/multi-paradigm).",
+    "version": "4.0.0"
+  },
+  "paths": {
+    "/api/info": {
+      "get": {
+        "tags": [
+          "root"
+        ],
+        "summary": "Get API service info",
+        "description": "Returns the service name, version, and the list of available endpoints. GET / serves the HTML web UI instead (see src/api/web.py).",
+        "operationId": "api_info_api_info_get",
+        "responses": {
+          "200": {
+            "description": "Service metadata and endpoint list",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Check service and model-loading health",
+        "description": "Reports overall service status plus which models are currently loaded (primary URL classifier, email ensemble, SMS ensemble, OCR backend). Returns status=unhealthy when the primary URL model is not loaded.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Health status and per-model loaded flags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict": {
+      "post": {
+        "tags": [
+          "prediction"
+        ],
+        "summary": "Fast single-model phishing prediction for a URL",
+        "description": "Extracts the 30 URL features and runs the primary (GA-optimized Random Forest) classifier for a low-latency phishing probability. For a richer verdict combining 7 classifiers, rules, and a Bayesian posterior, use /predict/multi-paradigm instead.",
+        "operationId": "predict_predict_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/URLRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Phishing probability, binary verdict, confidence, and processing time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict/ensemble": {
+      "post": {
+        "tags": [
+          "prediction"
+        ],
+        "summary": "Phishing prediction from all 7 ML classifiers with disagreement detection",
+        "description": "Runs the URL through all 7 classifiers (RF, SVM, MLP, XGBoost, LogReg, NaiveBayes, DecisionTree) in the voting ensemble and returns each individual verdict plus the soft-voting ensemble result. Flags edge cases where classifier disagreement exceeds the configured threshold.",
+        "operationId": "predict_ensemble_predict_ensemble_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/URLRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ensemble verdict, per-classifier breakdown, and disagreement info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnsemblePredictionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict/multi-paradigm": {
+      "post": {
+        "tags": [
+          "prediction"
+        ],
+        "summary": "Full multi-paradigm phishing verdict for a URL",
+        "description": "Runs the URL through all three paradigms (7-classifier ML ensemble, weighted rule engine, Bayesian posterior) and returns an aggregated verdict with a cross-paradigm disagreement score. This is the endpoint that demonstrates the thesis's core value: disagreement between paradigms as an additional diagnostic signal, alongside per-paradigm weighted contributions and the list of fired rules.",
+        "operationId": "predict_multi_paradigm_predict_multi_paradigm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/URLRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Aggregated verdict with per-paradigm contributions, fired rules, and disagreement info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultiParadigmResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explain": {
+      "post": {
+        "tags": [
+          "explainability"
+        ],
+        "summary": "Consolidated explainability report for a URL verdict",
+        "description": "Runs SHAP TreeExplainer (URL-only, RF) and consolidates it with the already-computed fired rules, all 7 individual ML predictions, and cross-paradigm disagreement into one response. Slower than /predict/multi-paradigm (SHAP is never run on the fast prediction path by design) \u2014 use this endpoint only when an explanation, not just a verdict, is needed. Demonstrates cross-paradigm disagreement as an additional diagnostic signal alongside feature-level SHAP attribution.",
+        "operationId": "explain_explain_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/URLRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SHAP top features, per-classifier predictions, fired rules, and disagreement explanation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict/email": {
+      "post": {
+        "tags": [
+          "prediction"
+        ],
+        "summary": "Phishing prediction for raw email text",
+        "description": "Extracts header features (SPF/DKIM/sender) and NLP text features from a raw email body/headers string, then classifies with the trained email ensemble.",
+        "operationId": "predict_email_predict_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Phishing verdict, probability, confidence, and explanation for the email text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSMSResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict/email/file": {
+      "post": {
+        "tags": [
+          "prediction"
+        ],
+        "summary": "Phishing prediction for an uploaded .eml email file",
+        "description": "Accepts a .eml file upload (max 5MB), parses the email, extracts header and text features, and classifies with the trained email ensemble.",
+        "operationId": "predict_email_file_predict_email_file_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predict_email_file_predict_email_file_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Phishing verdict, probability, confidence, and explanation for the uploaded email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSMSResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict/sms": {
+      "post": {
+        "tags": [
+          "prediction"
+        ],
+        "summary": "Phishing prediction for an SMS/chat message",
+        "description": "Extracts SMS-specific features (shortened URLs, call-to-action phrasing, segment count, etc.) and NLP text features, then classifies with the trained SMS ensemble.",
+        "operationId": "predict_sms_predict_sms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SMSRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Phishing verdict, probability, confidence, and explanation for the SMS text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSMSResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict/image": {
+      "post": {
+        "tags": [
+          "prediction"
+        ],
+        "summary": "Phishing prediction for an uploaded screenshot/photo (OCR + visual)",
+        "description": "Accepts a PNG/JPG upload (max 8MB), runs OCR once to extract text, feeds the OCR text into the existing email/text model, runs rule-engine keyword matching against the OCR text, and computes a perceptual-hash brand-similarity/layout visual signal. All three signals are combined via the existing multi-paradigm aggregator for a single verdict.",
+        "operationId": "predict_image_predict_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predict_image_predict_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Phishing verdict with visual brand-similarity info plus the usual paradigm contributions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSMSResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batch": {
+      "post": {
+        "summary": "Start Batch",
+        "operationId": "start_batch_batch_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_start_batch_batch_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batch/{job_id}": {
+      "get": {
+        "summary": "Batch Status",
+        "operationId": "batch_status_batch__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_predict_email_file_predict_email_file_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Email file in .eml format"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_predict_email_file_predict_email_file_post"
+      },
+      "Body_predict_image_predict_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Image file (.png/.jpg/.jpeg)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_predict_image_predict_image_post"
+      },
+      "Body_start_batch_batch_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_start_batch_batch_post"
+      },
+      "ClassifierResult": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Classifier name (rf, svm, mlp, etc.)"
+          },
+          "phishing_probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Phishing Probability",
+            "description": "Probability that URL is phishing (0.0-1.0)"
+          },
+          "prediction": {
+            "type": "string",
+            "enum": [
+              "phishing",
+              "legitimate"
+            ],
+            "title": "Prediction",
+            "description": "Binary prediction"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.5,
+            "title": "Confidence",
+            "description": "Confidence of prediction (max probability)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "phishing_probability",
+          "prediction",
+          "confidence"
+        ],
+        "title": "ClassifierResult",
+        "description": "Individual classifier prediction result."
+      },
+      "DisagreementInfo": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "description": "Normalized entropy 0-1 (0=agreement, 1=disagreement)"
+          },
+          "is_edge_case": {
+            "type": "boolean",
+            "title": "Is Edge Case",
+            "description": "True if disagreement exceeds threshold (0.7)"
+          },
+          "vote_distribution": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Vote Distribution",
+            "description": "Vote counts: {'phishing': N, 'legitimate': M}"
+          },
+          "agreeing_classifiers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Agreeing Classifiers",
+            "description": "Classifiers agreeing with majority"
+          },
+          "dissenting_classifiers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dissenting Classifiers",
+            "description": "Classifiers disagreeing with majority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "is_edge_case",
+          "vote_distribution",
+          "agreeing_classifiers",
+          "dissenting_classifiers"
+        ],
+        "title": "DisagreementInfo",
+        "description": "Disagreement analysis between classifiers."
+      },
+      "EmailSMSResponse": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "image"
+            ],
+            "title": "Content Type",
+            "description": "Type of content analyzed"
+          },
+          "final_prediction": {
+            "type": "string",
+            "enum": [
+              "phishing",
+              "legitimate"
+            ],
+            "title": "Final Prediction",
+            "description": "Aggregated prediction"
+          },
+          "final_probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Final Probability",
+            "description": "Phishing probability"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.5,
+            "title": "Confidence",
+            "description": "Prediction confidence"
+          },
+          "feature_count": {
+            "type": "integer",
+            "title": "Feature Count",
+            "description": "Number of features extracted"
+          },
+          "paradigm_contributions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParadigmContributions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Paradigm contributions (if multi-paradigm enabled)"
+          },
+          "active_rules": {
+            "items": {
+              "$ref": "#/components/schemas/FiredRule"
+            },
+            "type": "array",
+            "title": "Active Rules",
+            "description": "Fired rules from rule engine"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Human-readable explanation"
+          },
+          "processing_time_ms": {
+            "type": "number",
+            "title": "Processing Time Ms",
+            "description": "Processing time in milliseconds"
+          },
+          "visual_closest_brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visual Closest Brand",
+            "description": "Closest-matching brand by perceptual-hash similarity (image content only; None for email/sms). Diagnostic, not a standalone verdict."
+          },
+          "visual_hash_distance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visual Hash Distance",
+            "description": "Hamming distance (0-64) to the closest brand reference hash (image content only; None for email/sms). Lower = more visually similar."
+          }
+        },
+        "type": "object",
+        "required": [
+          "content_type",
+          "final_prediction",
+          "final_probability",
+          "confidence",
+          "feature_count",
+          "explanation",
+          "processing_time_ms"
+        ],
+        "title": "EmailSMSResponse",
+        "description": "Response model for email/SMS prediction.\n\nSimilar to MultiParadigmResponse but adapted for email/SMS input."
+      },
+      "EmailTextRequest": {
+        "properties": {
+          "raw_email": {
+            "type": "string",
+            "maxLength": 500000,
+            "minLength": 10,
+            "title": "Raw Email",
+            "description": "Raw email content including headers and body",
+            "examples": [
+              "From: sender@example.com\nSubject: Test\n\nEmail body here."
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "raw_email"
+        ],
+        "title": "EmailTextRequest",
+        "description": "Request model for raw email text prediction."
+      },
+      "EnsemblePredictionResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "ensemble_prediction": {
+            "type": "string",
+            "title": "Ensemble Prediction",
+            "description": "Ensemble prediction: 'phishing' or 'legitimate'"
+          },
+          "ensemble_probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Ensemble Probability",
+            "description": "Soft voting probability for phishing"
+          },
+          "ensemble_confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.5,
+            "title": "Ensemble Confidence",
+            "description": "Confidence of ensemble prediction"
+          },
+          "individual_predictions": {
+            "items": {
+              "$ref": "#/components/schemas/ClassifierResult"
+            },
+            "type": "array",
+            "title": "Individual Predictions",
+            "description": "Predictions from all 7 classifiers"
+          },
+          "disagreement": {
+            "$ref": "#/components/schemas/DisagreementInfo",
+            "description": "Disagreement analysis across classifiers"
+          },
+          "voting_method": {
+            "type": "string",
+            "title": "Voting Method",
+            "description": "Voting method: 'soft' or 'hard'"
+          },
+          "processing_time_ms": {
+            "type": "number",
+            "title": "Processing Time Ms",
+            "description": "Time taken to process request in milliseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "ensemble_prediction",
+          "ensemble_probability",
+          "ensemble_confidence",
+          "individual_predictions",
+          "disagreement",
+          "voting_method",
+          "processing_time_ms"
+        ],
+        "title": "EnsemblePredictionResponse",
+        "description": "Response model for ensemble prediction with individual classifier results."
+      },
+      "ExplainResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "final_prediction": {
+            "type": "string",
+            "enum": [
+              "phishing",
+              "legitimate"
+            ],
+            "title": "Final Prediction",
+            "description": "Aggregated prediction from all paradigms"
+          },
+          "final_probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Final Probability",
+            "description": "Weighted probability (threshold 0.5)"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.5,
+            "title": "Confidence",
+            "description": "Confidence level"
+          },
+          "individual_predictions": {
+            "items": {
+              "$ref": "#/components/schemas/ClassifierResult"
+            },
+            "type": "array",
+            "title": "Individual Predictions",
+            "description": "Predictions from all 7 classifiers (EXPL-03)"
+          },
+          "paradigm_contributions": {
+            "$ref": "#/components/schemas/ParadigmContributions",
+            "description": "Contributions from each paradigm"
+          },
+          "shap": {
+            "$ref": "#/components/schemas/ShapExplanation",
+            "description": "SHAP feature importance (EXPL-02, URL-only)"
+          },
+          "active_rules": {
+            "items": {
+              "$ref": "#/components/schemas/FiredRule"
+            },
+            "type": "array",
+            "title": "Active Rules",
+            "description": "Rules that fired from the rule-based system (EXPL-01)"
+          },
+          "disagreement": {
+            "$ref": "#/components/schemas/ParadigmDisagreementInfo",
+            "description": "Cross-paradigm disagreement analysis"
+          },
+          "disagreement_explanation": {
+            "type": "string",
+            "title": "Disagreement Explanation",
+            "description": "Fuller per-paradigm disagreement text (EXPL-04)"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Human-readable NL verdict, SHAP-enriched (EXPL-05)"
+          },
+          "processing_time_ms": {
+            "type": "number",
+            "title": "Processing Time Ms",
+            "description": "Total processing time in milliseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "final_prediction",
+          "final_probability",
+          "confidence",
+          "individual_predictions",
+          "paradigm_contributions",
+          "shap",
+          "active_rules",
+          "disagreement",
+          "disagreement_explanation",
+          "explanation",
+          "processing_time_ms"
+        ],
+        "title": "ExplainResponse",
+        "description": "Response model for the consolidated POST /explain endpoint (Phase 9).\n\nReuses URLRequest for input validation (no new input surface) and\nconsolidates in ONE call: 7 individual ML predictions (EXPL-03),\nparadigm contributions, SHAP top-10 (EXPL-02, URL-only), fired rules\nwith weights (EXPL-01), the fuller disagreement explanation (EXPL-04),\nand an NL verdict enriched with the top SHAP feature (EXPL-05)."
+      },
+      "FeatureContribution": {
+        "properties": {
+          "feature": {
+            "type": "string",
+            "title": "Feature",
+            "description": "Feature name (from extract_url_features)"
+          },
+          "shap_value": {
+            "type": "number",
+            "title": "Shap Value",
+            "description": "Signed SHAP contribution in standardized-feature space (relative contribution, not a raw probability unit)"
+          },
+          "raw_value": {
+            "type": "number",
+            "title": "Raw Value",
+            "description": "Unscaled raw feature value for this URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feature",
+          "shap_value",
+          "raw_value"
+        ],
+        "title": "FeatureContribution",
+        "description": "Single named, signed SHAP feature contribution (EXPL-02)."
+      },
+      "FiredRule": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Rule identifier"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Human-readable rule description"
+          },
+          "weight": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Weight",
+            "description": "Rule weight"
+          },
+          "matched_values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Values",
+            "description": "Specific values that triggered this rule"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "weight"
+        ],
+        "title": "FiredRule",
+        "description": "Fired rule from rule-based system."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model_loaded": {
+            "type": "boolean",
+            "title": "Model Loaded"
+          },
+          "email_model_loaded": {
+            "type": "boolean",
+            "title": "Email Model Loaded",
+            "default": false
+          },
+          "sms_model_loaded": {
+            "type": "boolean",
+            "title": "Sms Model Loaded",
+            "default": false
+          },
+          "ocr_backend_loaded": {
+            "type": "boolean",
+            "title": "Ocr Backend Loaded",
+            "default": false
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": "3.0.0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "model_loaded"
+        ],
+        "title": "HealthResponse",
+        "description": "Response model for health check."
+      },
+      "MultiParadigmResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "final_prediction": {
+            "type": "string",
+            "enum": [
+              "phishing",
+              "legitimate"
+            ],
+            "title": "Final Prediction",
+            "description": "Aggregated prediction from all paradigms"
+          },
+          "final_probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Final Probability",
+            "description": "Weighted probability (threshold 0.5)"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.5,
+            "title": "Confidence",
+            "description": "Confidence level (0.5 + distance from threshold)"
+          },
+          "paradigm_contributions": {
+            "$ref": "#/components/schemas/ParadigmContributions",
+            "description": "Contributions from each paradigm"
+          },
+          "disagreement": {
+            "$ref": "#/components/schemas/ParadigmDisagreementInfo",
+            "description": "Cross-paradigm disagreement analysis"
+          },
+          "active_rules": {
+            "items": {
+              "$ref": "#/components/schemas/FiredRule"
+            },
+            "type": "array",
+            "title": "Active Rules",
+            "description": "Rules that fired from rule-based system"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Human-readable explanation of prediction"
+          },
+          "processing_time_ms": {
+            "type": "number",
+            "title": "Processing Time Ms",
+            "description": "Total processing time in milliseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "final_prediction",
+          "final_probability",
+          "confidence",
+          "paradigm_contributions",
+          "disagreement",
+          "active_rules",
+          "explanation",
+          "processing_time_ms"
+        ],
+        "title": "MultiParadigmResponse",
+        "description": "Response model for multi-paradigm prediction endpoint.\n\nCombines predictions from:\n- ML ensemble (7 classifiers with weighted voting)\n- Rule-based expert system (weighted phishing rules)\n- Bayesian probabilistic classifier (GaussianNB)\n\nRequirements addressed:\n- AGG-01: Combines all three paradigms\n- AGG-02: Includes disagreement detection with is_edge_case\n- AGG-03: Final prediction with confidence\n- AGG-04: Paradigm contributions with weights\n- RULE-07: Active rules list with explanations"
+      },
+      "ParadigmContribution": {
+        "properties": {
+          "probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Probability",
+            "description": "Paradigm probability"
+          },
+          "weight": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Weight",
+            "description": "Paradigm weight in aggregation"
+          },
+          "weighted_contribution": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Weighted Contribution",
+            "description": "probability * weight"
+          },
+          "prediction": {
+            "type": "string",
+            "enum": [
+              "phishing",
+              "legitimate"
+            ],
+            "title": "Prediction",
+            "description": "This paradigm's individual prediction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "probability",
+          "weight",
+          "weighted_contribution",
+          "prediction"
+        ],
+        "title": "ParadigmContribution",
+        "description": "Contribution from a single paradigm."
+      },
+      "ParadigmContributions": {
+        "properties": {
+          "ml_ensemble": {
+            "$ref": "#/components/schemas/ParadigmContribution"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/ParadigmContribution"
+          },
+          "bayesian": {
+            "$ref": "#/components/schemas/ParadigmContribution"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ml_ensemble",
+          "rules",
+          "bayesian"
+        ],
+        "title": "ParadigmContributions",
+        "description": "All paradigm contributions."
+      },
+      "ParadigmDisagreementInfo": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "description": "Normalized entropy across paradigms (0=agreement, 1=max disagreement)"
+          },
+          "is_edge_case": {
+            "type": "boolean",
+            "title": "Is Edge Case",
+            "description": "True if disagreement exceeds threshold (0.7)"
+          },
+          "vote_distribution": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Vote Distribution",
+            "description": "Vote counts: {'phishing': N, 'legitimate': M}"
+          },
+          "probability_variance": {
+            "type": "number",
+            "title": "Probability Variance",
+            "description": "Variance in probabilities across paradigms"
+          },
+          "disagreeing_paradigms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Disagreeing Paradigms",
+            "description": "Paradigms disagreeing with majority"
+          },
+          "probability_spread": {
+            "type": "number",
+            "title": "Probability Spread",
+            "description": "Max - min probability across paradigms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "is_edge_case",
+          "vote_distribution",
+          "probability_variance",
+          "disagreeing_paradigms",
+          "probability_spread"
+        ],
+        "title": "ParadigmDisagreementInfo",
+        "description": "Cross-paradigm disagreement analysis."
+      },
+      "PredictionResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "phishing_probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Phishing Probability",
+            "description": "Probability that URL is phishing (0.0-1.0)"
+          },
+          "prediction": {
+            "type": "string",
+            "title": "Prediction",
+            "description": "Binary prediction: 'phishing' or 'legitimate'"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.5,
+            "title": "Confidence",
+            "description": "Confidence of prediction (max probability)"
+          },
+          "processing_time_ms": {
+            "type": "number",
+            "title": "Processing Time Ms",
+            "description": "Time taken to process request in milliseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "phishing_probability",
+          "prediction",
+          "confidence",
+          "processing_time_ms"
+        ],
+        "title": "PredictionResponse",
+        "description": "Response model for prediction results."
+      },
+      "SMSRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Message",
+            "description": "SMS or chat message text",
+            "examples": [
+              "URGENT: Your account has been suspended. Click here to verify."
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SMSRequest",
+        "description": "Request model for SMS/chat message prediction."
+      },
+      "ShapExplanation": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "True if SHAP computation succeeded for this request"
+          },
+          "content_type": {
+            "type": "string",
+            "const": "url",
+            "title": "Content Type",
+            "description": "SHAP v1 scope: URL-only",
+            "default": "url"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Representative model explained",
+            "default": "rf"
+          },
+          "top_features": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureContribution"
+            },
+            "type": "array",
+            "title": "Top Features",
+            "description": "Top-N signed contributions, ordered by descending |shap_value|"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "Human-readable caveat/status note (e.g. scaled-space label)",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "available"
+        ],
+        "title": "ShapExplanation",
+        "description": "SHAP feature-importance block for the consolidated /explain response.\n\nv1 is URL-only (content_type fixed to \"url\") and explains the single\nrepresentative RF Pipeline (model fixed to \"rf\") \u2014 see\n09-RESEARCH.md Pitfall 2 (VotingClassifier is not SHAP-explained)."
+      },
+      "URLRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL to analyze for phishing detection",
+            "examples": [
+              "https://example.com",
+              "http://suspicious-site.tk/login"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "URLRequest",
+        "description": "Request model for URL prediction."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
