@@ -247,10 +247,16 @@ Plans:
   4. Documentation includes architecture diagrams (system components, data flow, classification pipeline)
   5. Documentation includes theoretical descriptions of all algorithms (ML classifiers, genetic algorithm, Bayesian networks, rule-based systems) meeting academic thesis standards
 
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] To be planned
+- [ ] 10-01-PLAN.md — Wave 0 tests (test_eval_report.py + test_docs.py + OpenAPI summary guard), RED-by-design
+- [ ] 10-02-PLAN.md — EVAL-05 feature-group ablation + EVAL-06 PDF/CSV evaluation report
+- [ ] 10-03-PLAN.md — DOC-03 OpenAPI enrichment + DOC-04/05 Mermaid architecture & data-flow diagrams
+- [ ] 10-04-PLAN.md — Theory docs I: data pipeline, 7 ML classifiers, ensemble + README refresh
+- [ ] 10-05-PLAN.md — Theory docs II: genetic algorithm, rule-based system, Bayesian classifier
+- [ ] 10-06-PLAN.md — Theory docs III: multi-paradigm aggregation (core thesis), OCR/visual, SHAP
+- [ ] 10-07-PLAN.md — Human-verify checkpoint: thesis-grade prose + rendered report (final gate)
 
 ## Progress
 
@@ -268,7 +274,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. OCR & Visual Analysis | 5/5 | Complete   | 2026-09-30 |
 | 8. Batch Processing & Web Interface | 6/6 | Complete   | 2026-09-30 |
 | 9. Explainability & Dashboard | 4/4 | Complete   | 2026-10-01 |
-| 10. Evaluation & Documentation | 0/TBD | Not started | - |
+| 10. Evaluation & Documentation | 0/7 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-09*
