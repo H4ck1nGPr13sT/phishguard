@@ -20,19 +20,19 @@ For the live route reference, see [../api.md](../api.md).
 | [genetic-algorithm.md](./genetic-algorithm.md) | DEAP-based hyperparameter optimization, binary GA feature selection, GA ensemble-weight optimization | Written (this plan) |
 | [rule-based-system.md](./rule-based-system.md) | YAML-configured weighted expert-rule engine | Written (this plan) |
 | [bayesian.md](./bayesian.md) | Gaussian Naive Bayes posterior-probability classifier | Written (this plan) |
-| aggregation.md | Cross-paradigm `MultiParadigmAggregator` and cross-paradigm disagreement | Added by a later plan (10-06) |
-| ocr-visual.md | EasyOCR text extraction and visual/brand-similarity heuristics | Added by a later plan (10-06) |
-| explainability.md | SHAP `TreeExplainer`-based explanation generation | Added by a later plan (10-06) |
-
-The three rows above without a link (`aggregation.md`, `ocr-visual.md`,
-`explainability.md`) are listed here as forward references only (plain
-text, not Markdown links) so the internal-link test does not see a
-dangling target before Plan 10-06 lands and extends this table with its
-own linked rows.
+| [aggregation.md](./aggregation.md) | Cross-paradigm `MultiParadigmAggregator`, weighted combination, and disagreement-as-signal (project core thesis) | Written (this plan) |
+| [ocr-visual.md](./ocr-visual.md) | EasyOCR text extraction, perceptual-hash brand similarity, and OpenCV visual/layout heuristics | Written (this plan) |
+| [explainability.md](./explainability.md) | SHAP `TreeExplainer`-based explanation generation, consolidated `/explain` endpoint (EXPL-01..05) | Written (this plan) |
 
 ## Reading order
 
 For a first read, `data-pipeline.md` → `ml-classifiers.md` → `ensemble.md`
 mirrors the order data actually flows through the system: raw datasets are
 acquired and split before any classifier is trained, and the 7 classifiers
-exist before they can be combined into an ensemble.
+exist before they can be combined into an ensemble. From there,
+`rule-based-system.md` and `bayesian.md` introduce the two non-ML paradigms,
+`aggregation.md` shows how all three paradigms (and their classifier-level
+and cross-paradigm disagreement signals) are combined into one verdict —
+the project's core thesis — and `ocr-visual.md`/`explainability.md` cover
+the multimodal image path and the on-demand explainability layer built on
+top of that same aggregation foundation.
