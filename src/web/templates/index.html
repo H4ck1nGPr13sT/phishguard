@@ -36,6 +36,31 @@
       </form>
 
       <section id="result" class="result" hidden></section>
+
+      <button id="explain-btn" type="button" hidden>Explain this decision</button>
+
+      <section id="dashboard" class="dashboard" hidden aria-labelledby="dashboard-heading">
+        <h2 id="dashboard-heading">Explainability dashboard</h2>
+        <p class="help-text">
+          SHAP feature importance is URL-only in this version — the Explain
+          button only appears after analyzing a URL.
+        </p>
+
+        <h3>Classifier comparison</h3>
+        <div id="classifier-chart" class="chart-scroll"></div>
+
+        <h3>SHAP feature importance</h3>
+        <div id="shap-chart" class="chart-scroll"></div>
+
+        <h3>Fired rules</h3>
+        <div id="dashboard-rules"></div>
+
+        <h3>Disagreement analysis</h3>
+        <p id="dashboard-disagreement"></p>
+
+        <h3>Verdict explanation</h3>
+        <p id="dashboard-explanation"></p>
+      </section>
     </section>
 
     <section class="card" id="upload-area" aria-labelledby="upload-heading">

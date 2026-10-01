@@ -360,10 +360,129 @@ function renderShapChart(container, shap) {
 }
 
 /* ---------------------------------------------------------------------
+ * Explainability dashboard — state + wiring (Explain button, /explain)
+ * ------------------------------------------------------------------- */
+
+/** The URL from the most recent successful URL-type analysis, or null.
+ * SHAP is URL-only v1 — the Explain button is only offered when this is
+ * set (see resetDashboard / analyzePastedInput below). */
+let lastAnalyzedUrl = null;
+
+/** Hide + clear the dashboard and the Explain button, and forget the
+ * last-analyzed URL. Called at the START of every analyzePastedInput()
+ * call (any content type, before the fetch) so a prior URL's charts
+ * never persist under a new/failed verdict. */
+function resetDashboard() {
+  const dashboard = document.getElementById("dashboard");
+  dashboard.hidden = true;
+  dashboard.querySelectorAll("#classifier-chart, #shap-chart, #dashboard-rules").forEach(
+    (el) => el.replaceChildren()
+  );
+  setText(document.getElementById("dashboard-disagreement"), "");
+  setText(document.getElementById("dashboard-explanation"), "");
+  lastAnalyzedUrl = null;
+
+  const explainBtn = document.getElementById("explain-btn");
+  explainBtn.hidden = true;
+}
+
+/**
+ * Render the consolidated /explain response (ExplainResponse) into the
+ * #dashboard section: classifier-comparison chart (EXPL-03), SHAP chart
+ * (EXPL-02), fired rules (EXPL-01), disagreement text (EXPL-04), and the
+ * NL verdict explanation (EXPL-05). All text via textContent/createElement
+ * (NS) only.
+ */
+function renderDashboard(data) {
+  const dashboard = document.getElementById("dashboard");
+
+  const individual = data.individual_predictions || [];
+  const paradigms = data.paradigm_contributions || {};
+  const classifierItems = individual.map((p) => ({
+    label: p.name,
+    value: p.phishing_probability,
+  }));
+  if (paradigms.rules) {
+    classifierItems.push({ label: "rules", value: paradigms.rules.probability });
+  }
+  if (paradigms.bayesian) {
+    classifierItems.push({ label: "bayesian", value: paradigms.bayesian.probability });
+  }
+  renderClassifierChart(document.getElementById("classifier-chart"), classifierItems);
+
+  renderShapChart(document.getElementById("shap-chart"), data.shap);
+
+  const rulesContainer = document.getElementById("dashboard-rules");
+  rulesContainer.replaceChildren();
+  const rules = data.active_rules || [];
+  if (rules.length > 0) {
+    const rulesList = document.createElement("ul");
+    rulesList.className = "dashboard-rules";
+    for (const rule of rules) {
+      const item = document.createElement("li");
+
+      const nameEl = document.createElement("strong");
+      setText(nameEl, rule.name ?? "");
+      item.appendChild(nameEl);
+
+      if (rule.description) {
+        const descEl = document.createElement("span");
+        setText(descEl, " — " + rule.description);
+        item.appendChild(descEl);
+      }
+
+      const weightEl = document.createElement("span");
+      setText(weightEl, " (weight " + rule.weight + ")");
+      item.appendChild(weightEl);
+
+      if (rule.matched_values && rule.matched_values.length > 0) {
+        const matchedEl = document.createElement("div");
+        matchedEl.className = "result-rule-matched";
+        setText(matchedEl, "Matched: " + rule.matched_values.join(", "));
+        item.appendChild(matchedEl);
+      }
+
+      rulesList.appendChild(item);
+    }
+    rulesContainer.appendChild(rulesList);
+  } else {
+    const noneEl = document.createElement("p");
+    setText(noneEl, "No rules fired.");
+    rulesContainer.appendChild(noneEl);
+  }
+
+  setText(document.getElementById("dashboard-disagreement"), data.disagreement_explanation ?? "");
+  setText(document.getElementById("dashboard-explanation"), data.explanation ?? "");
+
+  dashboard.hidden = false;
+}
+
+/** POST the last-analyzed URL to /explain and render the dashboard.
+ * Guards on lastAnalyzedUrl being set (Explain only follows a
+ * successful URL analysis) and disables the button while in flight. */
+async function requestExplain() {
+  if (!lastAnalyzedUrl) {
+    return;
+  }
+  const explainBtn = document.getElementById("explain-btn");
+  explainBtn.disabled = true;
+  try {
+    const data = await postJSON("/explain", { url: lastAnalyzedUrl });
+    renderDashboard(data);
+  } catch (err) {
+    renderError(err && err.message ? err.message : "Explain request failed");
+  } finally {
+    explainBtn.disabled = false;
+  }
+}
+
+/* ---------------------------------------------------------------------
  * Paste-text flow (url/email/sms)
  * ------------------------------------------------------------------- */
 
 async function analyzePastedInput() {
+  resetDashboard();
+
   const typeSelect = document.getElementById("input-type");
   const textArea = document.getElementById("input-text");
   const type = typeSelect.value;
@@ -381,6 +500,10 @@ async function analyzePastedInput() {
       throw new Error("Unknown content type");
     }
     renderResult(normalize(data));
+    if (type === "url") {
+      lastAnalyzedUrl = text;
+      document.getElementById("explain-btn").hidden = false;
+    }
   } catch (err) {
     const message = err && err.message ? err.message : "";
     if (message.toLowerCase().includes("field required") || message === "") {
@@ -660,6 +783,14 @@ function initSingleSampleFlow() {
     batchBtn.addEventListener("click", (event) => {
       event.preventDefault();
       analyzeCsvBatch();
+    });
+  }
+
+  const explainBtn = document.getElementById("explain-btn");
+  if (explainBtn) {
+    explainBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      requestExplain();
     });
   }
 }
