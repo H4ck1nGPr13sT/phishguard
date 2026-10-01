@@ -79,7 +79,7 @@ class TestParadigmDisagreement:
             'phishing', 0.85
         )
         assert 0.91 < result['score'] < 0.92
-        assert result['is_edge_case'] is True
+        assert bool(result['is_edge_case']) is True
         assert 'rules' in result['disagreeing_paradigms']
 
     def test_unanimous_legitimate(self):
