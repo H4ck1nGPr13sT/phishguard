@@ -51,6 +51,12 @@ pytesseract>=0.3.13
 # Phase 8 - Web Interface
 jinja2>=3.1.0   # server-rendered templates (Jinja2Templates)
 
+# Phase 9 - Explainability
+# shap pulls in numba+llvmlite (JIT compiler, NOT torch) as core deps on this
+# platform. torch already present in .venv is from Phase 7's easyocr, unrelated
+# to shap. See 09-RESEARCH.md Package Legitimacy Audit + Standard Stack.
+shap>=0.52.0
+
 # Development/Testing
 pytest>=8.0.0
 pytest-cov>=4.0.0
