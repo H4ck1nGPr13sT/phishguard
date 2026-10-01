@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: OCR & Visual Analysis** - Image-based phishing detection with text extraction (completed 2026-09-30)
 - [x] **Phase 8: Batch Processing & Web Interface** - User-facing web application and CSV batch analysis (completed 2026-09-30)
 - [x] **Phase 9: Explainability & Dashboard** - SHAP/LIME explanations and multi-classifier comparison UI (completed 2026-10-01)
-- [ ] **Phase 10: Evaluation & Documentation** - Academic documentation and comprehensive evaluation
+- [x] **Phase 10: Evaluation & Documentation** - Academic documentation and comprehensive evaluation (completed 2026-10-01)
 
 ## Phase Details
 
@@ -250,13 +250,13 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — Wave 0 tests (test_eval_report.py + test_docs.py + OpenAPI summary guard), RED-by-design
-- [ ] 10-02-PLAN.md — EVAL-05 feature-group ablation + EVAL-06 PDF/CSV evaluation report
-- [ ] 10-03-PLAN.md — DOC-03 OpenAPI enrichment + DOC-04/05 Mermaid architecture & data-flow diagrams
-- [ ] 10-04-PLAN.md — Theory docs I: data pipeline, 7 ML classifiers, ensemble + README refresh
-- [ ] 10-05-PLAN.md — Theory docs II: genetic algorithm, rule-based system, Bayesian classifier
-- [ ] 10-06-PLAN.md — Theory docs III: multi-paradigm aggregation (core thesis), OCR/visual, SHAP
-- [ ] 10-07-PLAN.md — Human-verify checkpoint: thesis-grade prose + rendered report (final gate)
+- [x] 10-01-PLAN.md — Wave 0 tests (test_eval_report.py + test_docs.py + OpenAPI summary guard), RED-by-design
+- [x] 10-02-PLAN.md — EVAL-05 feature-group ablation + EVAL-06 PDF/CSV evaluation report
+- [x] 10-03-PLAN.md — DOC-03 OpenAPI enrichment + DOC-04/05 Mermaid architecture & data-flow diagrams
+- [x] 10-04-PLAN.md — Theory docs I: data pipeline, 7 ML classifiers, ensemble + README refresh
+- [x] 10-05-PLAN.md — Theory docs II: genetic algorithm, rule-based system, Bayesian classifier
+- [x] 10-06-PLAN.md — Theory docs III: multi-paradigm aggregation (core thesis), OCR/visual, SHAP
+- [x] 10-07-PLAN.md — Human-verify checkpoint: thesis-grade prose + rendered report (final gate)
 
 ## Progress
 
@@ -274,7 +274,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. OCR & Visual Analysis | 5/5 | Complete   | 2026-09-30 |
 | 8. Batch Processing & Web Interface | 6/6 | Complete   | 2026-09-30 |
 | 9. Explainability & Dashboard | 4/4 | Complete   | 2026-10-01 |
-| 10. Evaluation & Documentation | 0/7 | Planned (ready to execute) | 2026-10-01 |
+| 10. Evaluation & Documentation | 7/7 | Complete   | 2026-10-01 |
 
 ---
 *Roadmap created: 2026-02-09*
