@@ -658,7 +658,11 @@ of FastAPI 0.109+/matplotlib 3.10/scikit-learn 1.8 (all already pinned in this p
 not technical claims about library behavior (those were all verified via direct tool execution
 this session: matplotlib version/backend, cache file schemas, feature column names, route tags).
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> RESOLVED by orchestrator locked decisions (2026-10-01), applied in plans 10-02/04/05/06:
+> - **Q1 → RESOLVED:** email/SMS ablation is reported as a documented "training-data sensitivity" LIMITATION (no held-out split; no fabricated split from 200 samples). (locked decision 1)
+> - **Q2 → RESOLVED:** `docs/algorithms/*.md` are MODULE-structured (one file per paradigm), using `praca-inzynierska.pdf` terminology for consistency but NOT mirroring its chapter numbers. (locked decision 5)
 
 1. **Should the EVAL-05 ablation re-split email/SMS data, or evaluate on all 200 samples
    without a held-out split?**
@@ -825,9 +829,9 @@ state, not a fast-moving external ecosystem. Re-verify only if `src/features/*.p
 | Architecture | HIGH | All feature-group boundaries and model file structures directly inspected via tool execution, not assumed from training data |
 | Pitfalls | HIGH | Stale-cache pitfall cross-confirmed against an independent prior-phase research document; backend/model-absence pitfalls directly tool-verified |
 
-### Open Questions
-1. Whether email/SMS ablation should be reported as "training-data sensitivity" (no held-out split exists) vs. attempting an artificial split from only 200 samples — recommend the former, documented as a limitation.
-2. Whether `docs/` should mirror `praca-inzynierska.pdf`'s chapter structure or the codebase's module structure — recommend module structure for maintainability, flagged for user confirmation if a specific grading rubric requires chapter mirroring.
+### Open Questions (RESOLVED — see the main "## Open Questions (RESOLVED)" section above)
+1. RESOLVED: email/SMS ablation reported as "training-data sensitivity" limitation (no held-out split; no fabricated split).
+2. RESOLVED: `docs/` uses module structure (not thesis-chapter mirroring), with consistent terminology from the PDF.
 
 ### Ready for Planning
 Research complete. Planner can now create PLAN.md files for Phase 10.
