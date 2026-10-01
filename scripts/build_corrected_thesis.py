@@ -20,12 +20,28 @@ SRC_TXT = Path("/tmp/praca_txt.txt")
 OUT_MD = ROOT / "reports/praca-poprawiona.md"
 OUT_DOCX = ROOT / "praca-inzynierska-poprawiona.docx"
 
-AUTHOR = "Łukasz Drążek"  # z konta; potwierdź pisownię / uzupełnij promotora
+AUTHOR = "Łukasz Drążek"
+PROMOTER = "dr hab. inż. Rafał Dreżewski"
+
+# Stale Chapter-5 numbers contradicted by the honest evaluation — any extracted
+# body line containing one of these is dropped, so the old table values do not
+# coexist with the corrected Chapter 5 above.
+STALE_NUMBERS = ["0,9701", "0,9747", "0,9764", "0,9778", "0,9686", "0,9733",
+                 "0,9751", "0,9766", "0,9840", "0,9823", "0,9685",
+                 "+0,0535", "+0,0685", "98,4", "97,47"]
+
+FIGURES = [
+    ("reports/figury/strona-25.png", "Rysunek A1. Architektura systemu (s. 25 oryginału)."),
+    ("reports/figury/strona-26.png", "Rysunek A2. Architektura / przepływ danych (s. 26 oryginału)."),
+    ("reports/figury/strona-48.png", "Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału)."),
+    ("reports/figury/strona-49.png", "Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału)."),
+    ("reports/figury/strona-50.png", "Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału)."),
+]
 
 # ---- ERRATA block prepended to the document -------------------------------
 ERRATA = f"""# Wykaz poprawek (errata) — wersja poprawiona
 
-**Autor:** {AUTHOR}  **Promotor:** [do uzupełnienia]
+**Autor:** {AUTHOR}  **Promotor:** {PROMOTER}
 
 Niniejsza wersja nanosi poprawki wynikające z recenzji. Kluczowe zmiany
 merytoryczne (zweryfikowane w kodzie i udokumentowane skryptami w `scripts/`
@@ -145,6 +161,10 @@ def clean(text: str) -> str:
             continue
         # collapse TOC dot leaders "Tytuł ....... 12" -> "Tytuł — 12"
         s = re.sub(r"\.{4,}\s*", " — ", s)
+        # drop body lines carrying stale Chapter-5 numbers (contradicted by the
+        # corrected Chapter 5); keep TOC lines (they have the " — <page>" leader)
+        if " — " not in s and any(tok in s for tok in STALE_NUMBERS):
+            continue
         out.append(s)
     return "\n".join(out)
 
@@ -157,6 +177,22 @@ INLINE = [
     (r"analizie\s+czterech\s+uzupełniających",
      "analizie trzech uzupełniających"),
     (r"\[Imię i Nazwisko Autora\]", AUTHOR),
+    (r"\[stopień\.\s*imię nazwisko promotora\]", PROMOTER),
+    # U7 — correct the Optuna description (default sampler is TPE, not a GP).
+    (r"Ma jednak wady\.\s*Modeluje funkcję jako proces gaussowski,\s*co przy\s*"
+     r"zmiennych kategorialnych wymaga sztucznych przekształceń\.\s*Poza tym może utykać w\s*"
+     r"lokalnych ekstremach\.",
+     "Domyślnym samplerem biblioteki Optuna jest TPE (Tree-structured Parzen "
+     "Estimator), a wariant oparty na procesie Gaussa stanowi osobną, opcjonalną "
+     "metodę. Optymalizacja bayesowska bywa wrażliwa na zmienne kategorialne i "
+     "dobór przestrzeni; w tym projekcie wartości kategorialne i tak mapowane są na "
+     "indeksy (src/optimization/search_spaces.py). Algorytm genetyczny wybrano ze "
+     "względu na naturalną obsługę mieszanych przestrzeni (całkowitych, ciągłych i "
+     "kategorialnych) bez sztucznych przekształceń oraz prostą kontrolę kosztu "
+     "obliczeń, a nie z powodu udowodnionej przewagi skuteczności nad optymalizacją "
+     "bayesowską."),
+    # U12 — fix the obvious table-numbering error.
+    (r"Tabela 0\.", "Tabela 1."),
 ]
 
 
@@ -175,6 +211,15 @@ def main():
           "> wersjami z sekcji powyżej. Rysunki (zrzuty ekranu) wstaw ręcznie z\n"
           "> oryginału — ekstrakcja tekstu ich nie zawiera.\n\n"
           + body + "\n")
+    # Figures appendix (page renders — vector diagram + raster screenshots)
+    md += "\n\n# Załącznik A — rysunki (rendery stron oryginału)\n\n"
+    md += ("> Ekstrakcja tekstu nie zawiera grafiki, więc rysunki dołączono jako\n"
+           "> rendery odpowiednich stron PDF. Przy finalnym składzie zastąp je\n"
+           "> właściwymi, przyciętymi obrazami.\n\n")
+    for rel, cap in FIGURES:
+        p = ROOT / rel
+        if p.exists():
+            md += f"![{cap}]({p})\n\n*{cap}*\n\n"
     OUT_MD.write_text(md, encoding="utf-8")
     subprocess.run(["pandoc", str(OUT_MD), "-o", str(OUT_DOCX)], check=True)
     print(f"OK -> {OUT_DOCX.relative_to(ROOT)} ({OUT_DOCX.stat().st_size} B)")

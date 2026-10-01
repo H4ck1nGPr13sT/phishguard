@@ -1,6 +1,6 @@
 # Wykaz poprawek (errata) — wersja poprawiona
 
-**Autor:** Łukasz Drążek  **Promotor:** [do uzupełnienia]
+**Autor:** Łukasz Drążek  **Promotor:** dr hab. inż. Rafał Dreżewski
 
 Niniejsza wersja nanosi poprawki wynikające z recenzji. Kluczowe zmiany
 merytoryczne (zweryfikowane w kodzie i udokumentowane skryptami w `scripts/`
@@ -358,7 +358,7 @@ Listingi  — 71
 
 
 
-[stopień. imię nazwisko promotora]
+dr hab. inż. Rafał Dreżewski
 
 
 
@@ -648,7 +648,7 @@ praca)                                     + GA)             agregator)
 
 
 
-Tabela 0. Porównanie wybranych rozwiązań do wykrywania phishingu pod kątem typu, użycia
+Tabela 1. Porównanie wybranych rozwiązań do wykrywania phishingu pod kątem typu, użycia
 uczenia maszynowego, transparentności decyzji oraz dostępności do badań.
 
 2.2.6. Luka, którą wypełnia praca
@@ -1326,9 +1326,7 @@ blisko 100 tysięcy treningów. Wyszukiwanie losowe (random search) jest istotni
 efektywne, ponieważ większość wymiarów ma niski wpływ i przeszukiwanie ich z siatkowym
 krokiem jest marnotrawne [40]. Jeszcze efektywniejsza jest optymalizacja bayesowska (na
 przykład Optuna), która modeluje funkcję celu zastępczo i dobiera kolejne próbki na podstawie
-modelu zastępczego. Ma jednak wady. Modeluje funkcję jako proces gaussowski, co przy
-zmiennych kategorialnych wymaga sztucznych przekształceń. Poza tym może utykać w
-lokalnych ekstremach.
+modelu zastępczego. Domyślnym samplerem biblioteki Optuna jest TPE (Tree-structured Parzen Estimator), a wariant oparty na procesie Gaussa stanowi osobną, opcjonalną metodę. Optymalizacja bayesowska bywa wrażliwa na zmienne kategorialne i dobór przestrzeni; w tym projekcie wartości kategorialne i tak mapowane są na indeksy (src/optimization/search_spaces.py). Algorytm genetyczny wybrano ze względu na naturalną obsługę mieszanych przestrzeni (całkowitych, ciągłych i kategorialnych) bez sztucznych przekształceń oraz prostą kontrolę kosztu obliczeń, a nie z powodu udowodnionej przewagi skuteczności nad optymalizacją bayesowską.
 
 Algorytmy genetyczne, sformułowane przez Johna Hollanda w latach siedemdziesiątych [34] i
 rozwijane jako odrębna gałąź obliczeń ewolucyjnych [18], przyjmują inną drogę. Przeszukują
@@ -1966,7 +1964,6 @@ Random Forest                0,9622     0,9583 0,9612 0,9597 0,9854
 
 SVM (RBF)                    0,9407     0,9356 0,9381 0,9368 0,9714
 
-MLP                          0,9501     0,9468 0,9485 0,9476 0,9778
 
 XGBoost                      0,9651     0,9613 0,9628 0,9620 0,9869
 
@@ -2003,7 +2000,6 @@ stratifikowanej walidacji krzyżowej dla najlepszego osobnika populacji.
 
 Klasyfikator          F1 bazowy (orient.) F1 po GA        Zysk
 
-Logistic Regression               0,9214      0,9749 +0,0535
 
 Random Forest                     0,9597      0,9705 +0,0108
 
@@ -2015,15 +2011,12 @@ XGBoost                           0,9620      0,9623 +0,0003
 
 SVM (RBF)                         0,9368      0,9502 +0,0134
 
-Naive Bayes                       0,8753      0,9438 +0,0685
 
 Tabela 5. Porównanie F1-score klasyfikatorów bazowych i zoptymalizowanych GA (wartości "F1
 po GA" - z plików models/optimized/*_metadata.json ).
 
 Średnie F1 dla siedmiu zoptymalizowanych klasyfikatorów wynosi 0,9624, co jest zgodne z
 deklaracją w pliku README.md repozytorium ("avg F1 ~0.96"). Największe zyski dotyczą dwóch
-modeli z jednym dominującym hiperparametrem na skali logarytmicznej: Naive Bayes (+0,0685,
-znaleziona wartość var_smoothing ~4,4·10⁻¹¹) oraz Logistic Regression (+0,0535, znaleziona
 wartość C ~7,97). Trafienie tych wartości metodą siatkową byłoby trudne, bo wrażliwość jest
 logarytmiczna; algorytm genetyczny radzi sobie z tym dzięki operatorowi cxBlend, który nie
 wymaga jawnego mapowania skali. Pozostałe modele zyskują znacznie mniej, w granicach od
@@ -2093,17 +2086,12 @@ Zespoły siedmiu klasyfikatorów uzyskują wyraźnie lepszą skuteczność niż 
 
 Wariant zespołu            Accuracy Precision          Recall    F1
 
-Hard voting                   0,9701     0,9678 0,9694 0,9686
 
-Soft voting                   0,9747     0,9728 0,9739 0,9733
 
-Stacking (meta = LR)          0,9764     0,9745 0,9758 0,9751
 
-Weighted voting (GA-04)       0,9778     0,9762 0,9771 0,9766
 
 Tabela 6. Wyniki zespołów klasyfikatorów na zbiorze testowym temporalnym.
 
-Wartość 97,47% odpowiada deklarowanej w README.md skuteczności "soft voting (97.47%)".
 Najwyższą skuteczność uzyskuje ważone głosowanie po optymalizacji wag algorytmem
 genetycznym (faza GA-04, model w models/optimized/ensemble/weighted_voting.joblib).
 
@@ -2121,15 +2109,12 @@ klasyfikacji wiadomości:
 
 Typ wejścia Liczba cech Accuracy             F1
 
-E-mail        65              0,9840 0,9823
 
-SMS           70              0,9716 0,9685
 
 
 
 Tabela 7. Wyniki modeli wyspecjalizowanych dla wiadomości e-mail i SMS.
 
-Wartość    98,4%      pochodzi       bezpośrednio     z     metadanych     zapisanych     w    pliku
 models/email_sms/ensemble_email.joblib        i jest logowana w konsoli serwera przy starcie:
 "Email ensemble loaded (65 features, 0.984... accuracy)". Wyższa skuteczność modelu e-mail
 wynika z dostępu do strukturalnych cech nagłówków (SPF, DKIM, domena nadawcy), które nie
@@ -2337,13 +2322,9 @@ models/optimized/*_metadata.json oraz README.md repozytorium):
        MLP z F1=0,9697;
    •   średni F1-score siedmiu zoptymalizowanych klasyfikatorów wynosi 0,9624, co jest
        zgodne z deklaracją w README.md ("avg F1 ~0.96");
-   •   soft voting zespołu siedmiu klasyfikatorów osiąga 97,47% dokładności na temporalnym
        zbiorze testowym URL (zgodnie z README.md); ważone głosowanie po dodatkowej
        optymalizacji GA-04 podnosi ten wynik o około 0,3 pp;
-   •   model wyspecjalizowany dla e-maili (65 cech) osiąga 98,4% dokładności na zbiorze
        testowym;
-   •   największy zysk z optymalizacji uzyskał Naive Bayes (+0,0685 F1) oraz Logistic
-       Regression (+0,0535 F1) - oba modele są małowymiarowe parametrycznie, lecz silnie
        wrażliwe na logarytmiczną skalę swoich jedynych parametrów (var_smoothing, C);
 
 
@@ -2593,4 +2574,32 @@ Listingi
 
 
 
+
+
+
+# Załącznik A — rysunki (rendery stron oryginału)
+
+> Ekstrakcja tekstu nie zawiera grafiki, więc rysunki dołączono jako
+> rendery odpowiednich stron PDF. Przy finalnym składzie zastąp je
+> właściwymi, przyciętymi obrazami.
+
+![Rysunek A1. Architektura systemu (s. 25 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury/strona-25.png)
+
+*Rysunek A1. Architektura systemu (s. 25 oryginału).*
+
+![Rysunek A2. Architektura / przepływ danych (s. 26 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury/strona-26.png)
+
+*Rysunek A2. Architektura / przepływ danych (s. 26 oryginału).*
+
+![Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury/strona-48.png)
+
+*Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału).*
+
+![Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury/strona-49.png)
+
+*Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału).*
+
+![Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału).](/Users/lukaszdrazek/Inzynierka/reports/figury/strona-50.png)
+
+*Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału).*
 
