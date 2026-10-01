@@ -227,6 +227,30 @@ class TestMultiParadigmMissingModels:
                 ml_models.update(original_models)
 
 
+class TestMultiParadigmUnchangedByExplain:
+    """Phase 9 Plan 01 (Wave 0) guard: /predict/multi-paradigm's schema must
+    not be mutated by the new /explain endpoint work (09-02). The 7
+    individual classifier predictions are delivered via the NEW /explain
+    endpoint's own response model, not by extending MultiParadigmResponse
+    (09-RESEARCH.md Open Question Q2 — locked decision: new ExplainResponse
+    model, single /explain call; do NOT extend MultiParadigmResponse).
+    """
+
+    def test_multiparadigm_unchanged_by_explain(self, client):
+        """/predict/multi-paradigm still exposes its existing contract
+        fields (url/final_prediction/paradigm_contributions) unchanged.
+        """
+        response = client.post(
+            "/predict/multi-paradigm",
+            json={"url": "http://example.com"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "url" in data
+        assert "final_prediction" in data
+        assert "paradigm_contributions" in data
+
+
 class TestRootEndpoint:
     """Test API info endpoint includes multi-paradigm.
 

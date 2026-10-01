@@ -1,4 +1,4 @@
-"""Web UI contract tests (Phase 8 Plan 01 — Wave 0).
+"""Web UI contract tests (Phase 8 Plan 01 — Wave 0; extended Phase 9 Plan 01).
 
 These tests encode the served-HTML, static-asset, XSS-guard, CSP, and
 responsive-design contracts for Phase 8 (batch processing & web interface)
@@ -7,9 +7,15 @@ BEFORE the implementation lands. They are RED by design until plans
 ship. That is the expected and correct state for this plan — do not
 "fix" these tests here; they define the target behavior for later waves.
 
-Module-top imports are limited to `app`, `TestClient`, and stdlib so this
-file always collects cleanly even before src/web/ exists.
+Phase 9 Plan 01 adds the Explain-dashboard markup/JS-contract tests at the
+bottom of this file — also RED by design until 09-03 ships the dashboard.
+
+Module-top imports are limited to `app`, `TestClient`, `re`, and stdlib so
+this file always collects cleanly even before src/web/ or the dashboard
+exists.
 """
+
+import re
 
 from fastapi.testclient import TestClient
 
@@ -112,3 +118,65 @@ def test_root_moved_to_api_info():
         root = c.get("/")
         assert root.headers["content-type"].startswith("text/html")
         assert not root.headers["content-type"].startswith("application/json")
+
+
+# ---------------------------------------------------------------------------
+# Phase 9 Plan 01 (Wave 0) — Explain dashboard contract, RED by design until
+# 09-03 ships src/web/templates/index.html's dashboard section and the new
+# app.js chart renderers.
+# ---------------------------------------------------------------------------
+
+
+def test_index_has_explain_dashboard():
+    """GET / body contains an Explain trigger and dashboard containers.
+    (WEB-04, WEB-06)
+    """
+    with TestClient(app) as c:
+        resp = c.get("/")
+        assert resp.status_code == 200
+        body = resp.text
+        assert 'id="explain-btn"' in body
+        assert 'id="dashboard"' in body
+        assert 'id="classifier-chart"' in body
+        assert 'id="shap-chart"' in body
+
+
+def test_app_js_defines_chart_renderers():
+    """GET /static/app.js defines the new chart-render functions and uses
+    the SVG DOM API (no CDN charting library). (WEB-04)
+    """
+    with TestClient(app) as c:
+        text = c.get("/static/app.js").text
+        assert "renderDashboard" in text
+        assert "renderClassifierChart" in text
+        assert "renderShapChart" in text
+        assert "createElementNS" in text
+
+
+def test_app_js_contract_dashboard():
+    """app.js served text still has NO innerHTML/insertAdjacentHTML/
+    document.write sinks after the Phase 9 dashboard chart code lands.
+    (WEB-04, XSS contract)
+    """
+    with TestClient(app) as c:
+        text = c.get("/static/app.js").text
+        assert "innerHTML" not in text
+        assert "insertAdjacentHTML" not in text
+        assert "document.write" not in text
+
+
+def test_index_no_external_scripts():
+    """GET / body — every <script src="..."> tag must point at /static/,
+    never an external/CDN or protocol-relative source. (WEB-04, no-CDN CSP)
+
+    A bare 'script src="http' substring check would miss protocol-relative
+    `//cdn...` sources; a naive '//' check would false-positive on the
+    legitimate `/static/app.js`. Regex-extract every script src and assert
+    each one starts with "/static/".
+    """
+    with TestClient(app) as c:
+        body = c.get("/").text
+        srcs = re.findall(r'<script[^>]*\bsrc="([^"]*)"', body)
+        assert len(srcs) > 0
+        for src in srcs:
+            assert src.startswith("/static/"), f"Non-local script source: {src}"
