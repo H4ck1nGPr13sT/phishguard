@@ -48,7 +48,9 @@ dr hab. inż. Rafał Dreżewski
 
 
 
-1. Wstęp
+
+# 1. Wstęp
+
 
 Phishing   pozostaje   jednym    z   najczęściej    raportowanych   incydentów   bezpieczeństwa
 teleinformatycznego. Według raportów Anti-Phishing Working Group [1] oraz krajowych
@@ -72,7 +74,7 @@ dlaczego system się niepokoi.
 Zaprojektowano i wykonano system wykrywania phishingu, w którym wynik klasyfikacji opiera się nie na jednym modelu, lecz na trzech warstwach decyzyjnych działających podczas predykcji: zespole uczenia maszynowego, systemie regułowym i klasyfikatorze bayesowskim. Algorytm genetyczny pełni rolę wcześniejszej optymalizacji modeli, a nie czwartej warstwy głosującej. Trzy warstwy predykcji łączą: uczenie maszynowe, system regułowy i podejście
 probabilistycznego modelu bayesowskiego. Hipoteza pracy brzmi tak: rozbieżność wskazań
 między tymi metodami sama w sobie jest sygnałem diagnostycznym. Pozwala wychwycić
-przypadki graniczne, w których pojedyncze podejście mogłoby się mocno pomylić.
+próbki do ręcznej kontroli; związek flagi z częstością błędów wymaga osobnej oceny.
 
 Praca ma część teoretyczną i inżynierską. Część teoretyczna omawia problem phishingu,
 motywację projektu, przegląd istniejących rozwiązań, zakres funkcjonalności oraz wybrane
@@ -97,9 +99,13 @@ kierunkami rozwoju (rozdział 6).
 
 
 
-2. Cel prac i wizja produktu
 
-2.1. Charakterystyka problemu i motywacja
+# 2. Cel prac i wizja produktu
+
+
+
+## 2.1. Charakterystyka problemu i motywacja
+
 
 Phishing to forma inżynierii społecznej. Napastnik podszywa się pod zaufaną stronę lub
 instytucję, by wyłudzić dane uwierzytelniające, środki finansowe albo skłonić ofiarę do
@@ -140,14 +146,18 @@ technicznie, a w piątym - jak wyglądają konkretne predykcje na próbkach phis
 legalnych.
 
 
-2.2. Przegląd istniejących rozwiązań
+
+## 2.2. Przegląd istniejących rozwiązań
+
 
 Narzędzia do wykrywania phishingu istnieją od dwóch dekad, ale różnią się znacznie pod
 względem zakresu funkcjonalnego, metody analizy oraz miejsca wdrożenia: część działa w
 kliencie pocztowym, część w przeglądarce, jeszcze inne w bramie sieciowej. Dla potrzeb
 porównania w pracy akademickiej można je podzielić na cztery grupy.
 
-2.2.1. Mechanizmy reputacyjne
+
+### 2.2.1. Mechanizmy reputacyjne
+
 
 Mechanizmy reputacyjne są historycznie najstarszą warstwą ochrony przed phishingiem. Działają
 w oparciu o listy znanych złośliwych domen, adresów IP i sygnatur URL. Do najpowszechniej
@@ -160,7 +170,9 @@ mechanizmów dla próbek o ustalonej historii jest bardzo wysoka (powyżej 99 pr
 próbek pierwszego dnia (zero-day), które nie zdążyły jeszcze trafić na listę, spada do
 kilkudziesięciu procent. Czas reakcji wynosi od kilku godzin do kilku dni.
 
-2.2.2. Komercyjne filtry treści
+
+### 2.2.2. Komercyjne filtry treści
+
 
 Drugą grupę stanowią rozbudowane filtry treści dostarczane wraz z platformami pocztowymi i
 bezpieczeństwa biznesowego. Najważniejsi gracze na tym rynku to Microsoft Defender for
@@ -177,7 +189,9 @@ dla badań akademickich jest pełne zamknięcie szczegółów technicznych. Arch
 cech, modele i progi decyzyjne są tajemnicą handlową, a publikacje producentów zawierają
 jedynie ogólne deklaracje.
 
-2.2.3. Wtyczki przeglądarek i specjalistyczne dodatki
+
+### 2.2.3. Wtyczki przeglądarek i specjalistyczne dodatki
+
 
 Trzecią grupę tworzą wtyczki przeglądarek i specjalistyczne narzędzia działające po stronie
 klienta. Należą do nich między innymi Netcraft Anti-Phishing, Bitdefender TrafficLight, Avast
@@ -186,7 +200,9 @@ lekkie modele heurystyczne, dla zachowania niskiego narzutu wydajnościowego. W 
 rola jest pomocnicza, ponieważ większość użytkowników kieruje się ostrzeżeniami z głównej
 przeglądarki lub klienta pocztowego.
 
-2.2.4. Akademickie projekty open-source
+
+### 2.2.4. Akademickie projekty open-source
+
 
 Czwartą i najbardziej różnorodną grupę stanowią publikacje naukowe oraz projekty open-source.
 Wśród tych ostatnich na uwagę zasługują między innymi PhishStorm [42], URLNet [43] z
@@ -206,7 +222,9 @@ losowych, gradient boostingu, maszynach wektorów nośnych, regresji logistyczne
 MLP. Część prac używa prostych zespołów (głównie soft voting) lub wprowadza dedykowane
 reprezentacje sieciowe URL, na przykład osadzenia znakowe wektorowane przez CNN.
 
-2.2.5. Tabela porównawcza
+
+### 2.2.5. Tabela porównawcza
+
 
 Tabela poniżej zestawia wybrane cechy charakterystyczne porównanych podejść, z
 uwzględnieniem trzech wymiarów istotnych dla projektu PhishGuard: użycia uczenia
@@ -250,7 +268,9 @@ praca)                                     + GA)             agregator)
 Tabela 1. Porównanie wybranych rozwiązań do wykrywania phishingu pod kątem typu, użycia
 uczenia maszynowego, transparentności decyzji oraz dostępności do badań.
 
-2.2.6. Luka, którą wypełnia praca
+
+### 2.2.6. Luka, którą wypełnia praca
+
 
 W każdej z czterech grup brakuje czegoś istotnego dla pracy akademickiej. Mechanizmy
 reputacyjne są potrzebne, ale działają z opóźnieniem i łatwo je ominąć przez świeżą domenę.
@@ -266,7 +286,9 @@ rozbieżności między metodami. Kod jest dostępny w repozytorium, a kolejne ek
 można odtworzyć na podstawie zapisanych modeli i metadanych.
 
 
-2.3. Wizja systemu PhishGuard
+
+## 2.3. Wizja systemu PhishGuard
+
 
 Projektowany system PhishGuard ma być kompletnym demonstratorem analitycznym
 wykrywającym phishing w trzech rodzajach treści: adresach URL, wiadomościach e-mail (w tym
@@ -294,9 +316,13 @@ Kluczowymi cechami wizji są:
        OCR, dashboard wizualizacyjny) bez naruszania warstwy modeli.
 
 
-2.4. Studium wykonalności i analiza zagrożeń
 
-2.4.1. Wykonalność techniczna
+## 2.4. Studium wykonalności i analiza zagrożeń
+
+
+
+### 2.4.1. Wykonalność techniczna
+
 
 Pod względem technicznym projekt nie wymaga niczego, czego nie dałoby się znaleźć w
 standardowych pakietach Pythona. Klasyfikatory ML pochodzą z scikit-learn, gradient
@@ -306,7 +332,9 @@ eml-parser. Wszystkie te biblioteki są aktywnie utrzymywane i pokrywają zakres
 
 projektu bez konieczności pisania własnych implementacji algorytmów.
 
-2.4.2. Wykonalność czasowa
+
+### 2.4.2. Wykonalność czasowa
+
 
 Czas potrzebny na realizację projektu szacowano dzieląc go na fazy. Wstępna faza zbierania i
 czyszczenia danych zajmuje przy publicznych zbiorach około tygodnia (pobranie, walidacja,
@@ -325,7 +353,9 @@ kilkudziesięciu godzin. System regułowy, klasyfikator bayesowski i agregator s
 obliczeniowo. Frontend można dodać w ciągu jednego dnia. Łącznie projekt mieści się w ramach
 pracy semestralnej pojedynczej osoby.
 
-2.4.3. Analiza zagrożeń
+
+### 2.4.3. Analiza zagrożeń
+
 
 Zagrożenia projektowe można podzielić na trzy kategorie. Pierwszą stanowią zagrożenia
 dotyczące danych. Publiczne zbiory phishingowe (PhishTank [15], UCI [14], Nazario [16]) są
@@ -343,7 +373,9 @@ omijające konkretne reguły lub wpadające w punkty niskiej pewności klasyfika
 jest połączenie wielu metod analizy oraz okresowy retrening z dodawaniem przykładów
 adwersaryjnych.
 
-2.4.4. Wykonalność ekonomiczna
+
+### 2.4.4. Wykonalność ekonomiczna
+
 
 Projekt nie wymaga inwestycji w komercyjne licencje (wszystkie biblioteki na licencjach BSD,
 MIT, Apache 2.0) ani specjalistycznego sprzętu (cały trening i wnioskowanie odbywa się na
@@ -352,7 +384,9 @@ prądu i ewentualnie kosztu pobierania danych z PhishTank dla większych limitó
 publiczny ma ograniczenie pobrań dziennych). Dla wdrożenia produkcyjnego doszedłby koszt
 serwera, ale dla pracy akademickiej i demonstracji koszt jest pomijalny.
 
-2.4.5. Bilans
+
+### 2.4.5. Bilans
+
 
 Projekt można zrealizować w ramach pracy jednej osoby, jednego semestru i bez inwestycji
 finansowej. Główne ryzyko techniczne dotyczy concept drift oraz odporności na ataki
@@ -399,9 +433,13 @@ wcześniejszych faz.
 
 
 
-3. Zakres funkcjonalności
 
-3.1. Aktorzy i konteksty użycia
+# 3. Zakres funkcjonalności
+
+
+
+## 3.1. Aktorzy i konteksty użycia
+
 
 System przewiduje trzech głównych aktorów:
 
@@ -426,7 +464,9 @@ Konteksty użycia obejmują:
    •   Monitorowanie eksperymentów - przegląd historii optymalizacji w MLflow.
 
 
-3.2. Wymagania funkcjonalne
+
+## 3.2. Wymagania funkcjonalne
+
 
 Wymagania funkcjonalne projektu zostały zdefiniowane na podstawie założeń pracy oraz analizy
 literatury dotyczącej wykrywania phishingu. W repozytorium projektu znajduje się ich pełna lista
@@ -501,7 +541,9 @@ Agregacja (AGG)
       wykrywanie rozbieżności między warstwami, decyzja końcowa z poziomem pewności.
 
 
-3.3. Wymagania niefunkcjonalne
+
+## 3.3. Wymagania niefunkcjonalne
+
 
   •   Wydajność: czas odpowiedzi pojedynczego endpointu poniżej 500 ms (osiągnięte dzięki
       załadowaniu modeli przy starcie serwera, w mechanizmie lifespan FastAPI).
@@ -523,7 +565,9 @@ Agregacja (AGG)
        MLflow, kontrolowane ziarna losowe (random_state=42).
 
 
-3.4. Komponenty współpracujące
+
+## 3.4. Komponenty współpracujące
+
 
 System integruje się z następującymi komponentami zewnętrznymi:
 
@@ -544,9 +588,13 @@ System integruje się z następującymi komponentami zewnętrznymi:
 
 
 
-4. Wybrane aspekty realizacji
 
-4.1. Architektura systemu
+# 4. Wybrane aspekty realizacji
+
+
+
+## 4.1. Architektura systemu
+
 
 PhishGuard zaprojektowano w architekturze trójwarstwowej z modularnym podziałem warstwy
 logiki:
@@ -580,7 +628,9 @@ nie       operują   na    ścieżkach   plików   bezpośrednio,   lecz       p
 (src/config/settings.py).
 
 
-4.2. Pipeline danych i ekstrakcja cech
+
+## 4.2. Pipeline danych i ekstrakcja cech
+
 
 Pipeline danych (src/data/pipeline.py) realizuje sekwencję czterech kroków:
 
@@ -595,7 +645,9 @@ Pipeline danych (src/data/pipeline.py) realizuje sekwencję czterech kroków:
 
 
 
-   3. Łączenie - merger.py ujednolica formaty i etykiety.
+
+# 3. Łączenie - merger.py ujednolica formaty i etykiety.
+
    4. Rozdział temporalny i balansowanie - temporal_split.py zapewnia, że wszystkie
         próbki treningowe pochodzą sprzed daty granicznej, a wszystkie testowe - po niej;
         balancer.py             stosuje konfigurowalne strategie balansowania, m.in. SMOTE [8],
@@ -662,12 +714,13 @@ Ease).
 starcie API).
 
 
-4.3. Warstwa uczenia maszynowego
+
+## 4.3. Warstwa uczenia maszynowego
+
 
 Do projektu wybrano siedem klasyfikatorów z różnych rodzin algorytmów uczenia
 nadzorowanego. Każdy z nich przyjmuje inne założenia o rozkładzie danych i inaczej reaguje na
-zależności między cechami. To nie jest przypadek - taka mieszanka heterogeniczna daje w
-zespole zysk większy niż prosta suma składowych, co dobrze tłumaczy klasyczna analiza bias-
+zależności między cechami. To nie jest przypadek - różnorodność modeli uzasadnia sprawdzenie zespołu; na przeprowadzonym teście zespół nie uzyskał przewagi nad najlepszym modelem pojedynczym, co dobrze tłumaczy klasyczna analiza bias-
 variance decomposition.
 
 
@@ -685,7 +738,9 @@ jako pliki .joblib z opcjami compress=3, protocol=5. Kompresja redukuje rozmiar 
 około 60 procent, a piąty protokół pickle przyspiesza deserializację dużych macierzy numpy i
 zachowuje zgodność z Pythonem 3.8 i nowszymi.
 
-4.3.1. Random Forest
+
+### 4.3.1. Random Forest
+
 
 Las losowy jest zespołem drzew decyzyjnych, w którym każde drzewo trenowane jest na próbie
 bootstrapowej zbioru treningowego oraz na losowym podzbiorze cech [20]. Ostateczna decyzja
@@ -698,7 +753,7 @@ obciążenia, co jest formalnym wyjaśnieniem skuteczności tego algorytmu w pro
 klasyfikacji binarnej.
 
 Random Forest dobrze radzi sobie z mieszanymi typami cech (długości, zliczenia, wskaźniki
-binarne, miary informacyjne), które występują w opisie URL. W praktyce sprawdziłem to na
+binarne, miary informacyjne), które występują w opisie URL. W praktyce sprawdzono to na
 własnym zbiorze cech: nawet kiedy do macierzy trafiały zmienne tak różne jak url_length
 (rzędu setek) i has_https (zero-jedynkowe), las losowy nie wymagał skalowania i dawał stabilne
 wyniki przy domyślnych ustawieniach. Jest też mało wrażliwy na cechy nieinformacyjne, bo przy
@@ -712,7 +767,9 @@ osobnego zbioru walidacyjnego: każde drzewo widzi w treningu średnio 63,2 proc
 minus 1 podzielone przez liczbę Eulera), a pozostałe próbki stają się zbiorem walidacyjnym dla
 tego drzewa.
 
-4.3.2. Support Vector Machine
+
+### 4.3.2. Support Vector Machine
+
 
 Maszyna wektorów nośnych szuka hiperpłaszczyzny separującej klasy z maksymalnym
 marginesem [21]. W oryginalnej formie SVM operuje na danych liniowo separowalnych, ale
@@ -732,7 +789,9 @@ phishingowych, ograniczenie to nie jest jednak praktycznie istotne. Ustawienie p
 powoduje, że klasa SVC po treningu wykonuje pięciokrotną walidację krzyżową w celu
 skalibrowania funkcji predict_proba, co jest niezbędne dla soft voting w zespole.
 
-4.3.3. Multi-Layer Perceptron
+
+### 4.3.3. Multi-Layer Perceptron
+
 
 Wielowarstwowy perceptron należy do rodziny sztucznych sieci neuronowych. Tworzą go
 warstwa wejściowa, jedna lub więcej warstw ukrytych oraz warstwa wyjściowa. Każdy neuron
@@ -752,7 +811,9 @@ jakość klasyfikacji na zbiorze testowym, a zwiększa ryzyko przeuczenia. Algor
 opisany w rozdziale 4.4 dobiera optymalną wielkość warstwy ukrytej i współczynnik
 regularyzacji alpha.
 
-4.3.4. Gradient Boosting (XGBoost)
+
+### 4.3.4. Gradient Boosting (XGBoost)
+
 
 Gradient boosting buduje zespół drzew sekwencyjnie. Każde kolejne drzewo uczy się
 przewidywać błąd resztkowy poprzedniego zespołu, a wkład każdego nowego drzewa
@@ -771,7 +832,9 @@ lasami losowymi. Wadą jest większa liczba hiperparametrów (w projekcie optyma
 dziewięć z nich), co czyni XGBoost trudnym do dostrojenia bez automatycznej procedury, takiej
 jak algorytm genetyczny.
 
-4.3.5. Logistic Regression
+
+### 4.3.5. Logistic Regression
+
 
 Regresja logistyczna jest modelem liniowym przewidującym logarytm szansy klasy pozytywnej
 jako kombinację liniową cech wejściowych [37]. Pomimo nazwy, regresja logistyczna jest
@@ -786,14 +849,16 @@ Mimo prostoty formalnej regresja logistyczna jest częstym wyborem w problemach 
 phishingu i w wielu badaniach osiąga wyniki porównywalne lub nieznacznie gorsze niż lasy
 losowe i XGBoost. To zresztą zaskoczyło mnie najbardziej w wynikach tego projektu: po
 dobraniu parametru regularyzacji C przez algorytm genetyczny regresja logistyczna okazała się
-najlepszym pojedynczym klasyfikatorem (F1=0,9749), wyprzedzając las losowy (0,9705) i
+klasyfikatorem o najwyższym CV-fitness podczas strojenia (0,9749); na odłożonym teście najwyższy F1 osiągnął MLP-GA (0,9583), wyprzedzając las losowy (0,9705) i
 XGBoost (0,9623). Wartość C znaleziona przez GA wynosi około 7,97 - to relatywnie słaba
 regularyzacja. Słaba regularyzacja jest tu uzasadniona, bo zbiór cech jest niskowymiarowy (30
 cech URL), więc ryzyko przeuczenia modelu liniowego jest niskie. Drugą zaletą regresji
 logistycznej jest pełna interpretowalność: każda cecha ma znany współczynnik, a logarytm
 szansy klasy jest sumą wpływów cech, więc decyzję modelu da się wytłumaczyć słownie.
 
-4.3.6. Gaussian Naive Bayes
+
+### 4.3.6. Gaussian Naive Bayes
+
 
 Naiwny klasyfikator Bayesa stosuje twierdzenie Bayesa do obliczenia prawdopodobieństwa klasy
 pod warunkiem cech. Przyjmuje przy tym naiwne założenie o warunkowej niezależności cech
@@ -815,7 +880,9 @@ nowe informacje. Klasyfikator bayesowski jest też trzonem trzeciej warstwy decy
 
 
 
-4.3.7. Decision Tree
+
+### 4.3.7. Decision Tree
+
 
 Drzewo decyzyjne dzieli przestrzeń cech serią rekursywnych podziałów binarnych, dobieranych
 tak, aby maksymalizować zysk informacyjny lub minimalizować zanieczyszczenie Giniego [41].
@@ -832,7 +899,9 @@ jako podejrzanego. W tym projekcie algorytm genetyczny dobrał głębokość drz
 co daje maksymalnie 64 ścieżki decyzyjne - liczbę na tyle niewielką, że pełne drzewo można
 zmieścić na jednym arkuszu A4 i pokazać operatorowi podczas obrony alarmu.
 
-4.3.8. Zespoły klasyfikatorów
+
+### 4.3.8. Zespoły klasyfikatorów
+
 
 Trzy metody zespołowe zaimplementowano w module src/models/ensemble.py. Soft voting
 polega na uśrednieniu prawdopodobieństw klas zwracanych przez wszystkie klasyfikatory.
@@ -855,7 +924,9 @@ każda predykcja pochodzi z modelu, który tej próbki nie widział w treningu.
 
 Listing 2. Konfiguracja meta-modelu w stacking ensemble (src/models/ensemble.py).
 
-4.3.9. Wykrywanie rozbieżności w zespole
+
+### 4.3.9. Wykrywanie rozbieżności w zespole
+
 
 Funkcja get_disagreement_summary (moduł src/models/disagreement.py) oblicza wskaźnik
 rozbieżności między predykcjami klasyfikatorów. Wskaźnikiem jest znormalizowana entropia
@@ -872,9 +943,13 @@ rozkładu jednomyślnego entropia jest dokładnie zerowa, co dobrze pasuje do ag
 opisanego w rozdziale 4.7.
 
 
-4.4. Optymalizacja ewolucyjna (algorytm genetyczny)
 
-4.4.1. Motywacja i krótki rys historyczny
+## 4.4. Optymalizacja ewolucyjna (algorytm genetyczny)
+
+
+
+### 4.4.1. Motywacja i krótki rys historyczny
+
 
 Dobór hiperparametrów klasyfikatora ML jest klasycznym problemem optymalizacji w
 przestrzeni o mieszanym typie. Część parametrów jest liczbami całkowitymi (liczba drzew,
@@ -904,7 +979,9 @@ jednej generacji jest niezależna, więc całość łatwo zrównoleglić. Ceną 
 obliczeniowy niż w optymalizacji bayesowskiej i konieczność strojenia samych metaparametrów
 algorytmu (wielkość populacji, prawdopodobieństwa krzyżowania i mutacji).
 
-4.4.2. Implementacja na bazie DEAP
+
+### 4.4.2. Implementacja na bazie DEAP
+
 
 Optymalizację zrealizowano w bibliotece DEAP (Fortin i in. [7], Distributed Evolutionary
 Algorithms in Python, wersja 1.4.3). DEAP udostępnia gotowe operatory selekcji, krzyżowania i
@@ -1009,7 +1086,9 @@ Pełny komplet siedmiu plików metadanych jest zapisany w repozytorium i jest je
 głównych źródeł wyników raportowanych w rozdziale piątym pracy.
 
 
-4.5. System regułowy
+
+## 4.5. System regułowy
+
 
 System regułowy zapisuje wiedzę ekspercką w pliku YAML i ocenia adres URL przez
 sprawdzenie kilku zważonych warunków. Plik z regułami ładuje RuleEngine (moduł
@@ -1057,7 +1136,9 @@ Algorytm ewaluacji
 
 RuleEngine.evaluate(features, raw_url=...) wykonuje następujące kroki:
 
-   1. Iteruje po wszystkich regułach.
+
+# 1. Iteruje po wszystkich regułach.
+
    2. Dla każdej reguły wywołuje dedykowany ewaluator zależny od typu warunku:
           _evaluate_keyword_match, _evaluate_feature_check lub _evaluate_domain_match.
 
@@ -1086,9 +1167,13 @@ System regułowy jest z założenia tańszy obliczeniowo i bardziej interpretowa
 klasyfikatory ML, a jego wynik jest jednym z trzech komponentów końcowej agregacji.
 
 
-4.6. System probabilistyczny (klasyfikator bayesowski)
 
-4.6.1. Twierdzenie Bayesa i jego zastosowanie do klasyfikacji
+## 4.6. System probabilistyczny (klasyfikator bayesowski)
+
+
+
+### 4.6.1. Twierdzenie Bayesa i jego zastosowanie do klasyfikacji
+
 
 Probabilistyczna warstwa systemu opiera się na twierdzeniu Bayesa, sformułowanym przez
 Thomasa Bayesa w połowie osiemnastego wieku i opublikowanym pośmiertnie w 1763 roku.
@@ -1124,7 +1209,9 @@ pogarsza estymację bezwzględnych wartości prawdopodobieństw, ale jak pokazan
 klasycznych [39], dokładność decyzji klasyfikacyjnej pozostaje wysoka, ponieważ błędy
 korelacji często redukują się symetrycznie dla obu klas.
 
-4.6.2. Wariant Gaussowski i kalibracja
+
+### 4.6.2. Wariant Gaussowski i kalibracja
+
 
 Wariant gaussowski Naive Bayesa zakłada, że każda cecha ciągła ma wewnątrz klasy rozkład
 normalny, którego średnia i wariancja estymowane są ze zbioru treningowego. Wzór staje się:
@@ -1156,7 +1243,9 @@ jest kalibracja izotoniczna lub kalibracja Platta. W projekcie nie zastosowano k
 obecnej wersji, choć jest ona wymieniona w rozdziale ograniczeń jako jeden z planowanych
 kierunków rozwoju.
 
-4.6.3. Implementacja w projekcie
+
+### 4.6.3. Implementacja w projekcie
+
 
 Klasyfikator     bayesowski   (moduł    src/paradigms/bayesian/classifier.py )         opakowuje
 GaussianNB     z biblioteki scikit-learn w klasę BayesianClassifier udostępniającą metodę
@@ -1189,7 +1278,9 @@ Dostarcza też jawnej oceny prawdopodobieństwa, którą łatwo zinterpretować 
 
 
 
-4.7. Agregacja wielo-paradygmatowa
+
+## 4.7. Agregacja wielo-paradygmatowa
+
 
 Agregator (moduł src/paradigms/aggregation/aggregator.py ) łączy wyniki trzech warstw (ML
 ensemble, system regułowy, klasyfikator bayesowski) zgodnie z ważoną liniową kombinacją:
@@ -1215,7 +1306,7 @@ atrybutach:
 
     •   prediction - decyzja tej warstwy.
 
-Dzięki temu w odpowiedzi widać konkretne wartości - dla phishingu PayPal z rozdziału 5.7.1 są
+Dzięki temu w odpowiedzi widać konkretne wartości - dla phishingu PayPal  są
 to: ML 0,4602, reguły 0,3 i Bayes 0,2 jako wkłady wagowe, a po zsumowaniu wynik finalny
 0,9602.
 
@@ -1224,17 +1315,21 @@ Wykrywanie rozbieżności między warstwami decyzyjnymi
 Moduł src/paradigms/aggregation/disagreement.py oblicza wskaźnik rozbieżności w oparciu o
 cztery komponenty:
 
-    1. Wariancja prawdopodobieństw - Var([𝑃ML , 𝑆rules , 𝑃bayes ]).
+
+# 1. Wariancja prawdopodobieństw - Var([𝑃ML , 𝑆rules , 𝑃bayes ]).
+
 
     2. Rozkład decyzji binarnych - liczba warstw wskazujących phishing kontra legitimate.
     3. Lista odstających - te z warstw, których decyzja odbiega od większości.
 
 
 
-   4. Rozpiętość prawdopodobieństw - max𝑃 − min𝑃.
+
+# 4. Rozpiętość prawdopodobieństw - max𝑃 − min𝑃.
+
 
 Wskaźnik sumaryczny obliczany jest jako znormalizowana entropia rozkładu binarnych decyzji
-trzech warstw, 𝐻/log 2 3 , gdzie 𝐻 liczone jest dla dwóch klas (phishing, legitimate). Cztery
+trzech warstw, 𝐻/log₂2 = 1 (dwie klasy głosów; dla rozkładu 2:1 ≈ 0,918, dla 4:3 ≈ 0,985) , gdzie 𝐻 liczone jest dla dwóch klas (phishing, legitimate). Cztery
 wymienione wielkości (wariancja, rozkład, lista odstających, rozpiętość) zwracane są jako
 diagnostyka towarzysząca, ale do samego scoru wchodzi tylko rozkład głosów binarnych. Próg
 0,7 pozwala oznaczyć próbkę jako edge case wymagający dalszej analizy. Wartość ta jest
@@ -1253,7 +1348,9 @@ zawierające:
    •   ostrzeżenie o wysokim disagreement, gdy próbka jest edge case.
 
 
-4.8. API REST i aplikacja serwerowa
+
+## 4.8. API REST i aplikacja serwerowa
+
 
 Warstwa serwerowa została zaimplementowana w oparciu o framework FastAPI (Ramirez [10],
 src/api/main.py,       src/api/endpoints.py).    Architektura    realizuje   sześć    endpointów
@@ -1275,7 +1372,9 @@ Sekwencja ładowania (uproszczona):
     2. ensemble/voting_soft      -      aktywny    zespół    z   rejestru       (z     fallbackiem    do
          models/ensemble/voting_soft.joblib);
 
-    3. Ewentualnie voting_hard i stacking (do porównań);
+
+# 3. Ewentualnie voting_hard i stacking (do porównań);
+
     4. rule_engine - silnik regułowy z YAML;
     5. bayesian - klasyfikator bayesowski z models/bayesian/;
     6. aggregator - inicjalizacja agregatora z domyślnymi wagami;
@@ -1303,7 +1402,7 @@ paradigm
 Tabela 3. Wykaz endpointów API PhishGuard wraz z funkcjami.
 
 Tabela     3   opisuje   pełną   wersję    repozytorium.     Lokalny    demo          build   URL-only
-(C:\Users\ldrazek\phishguard-build), używany do smoke-testów w rozdziale 5.7, udostępnia
+(C:\Users\ldrazek\phishguard-build), używany podczas prac; udostępnia
 podzbiór tych endpointów: /, /health, /predict, /predict/ensemble, /predict/multi-paradigm
 
 
@@ -1347,7 +1446,9 @@ Asynchronicznie     zaimplementowano        wyłącznie     endpoint    przyjmuj
 
 
 
-4.9. Aplikacja webowa demonstratora
+
+## 4.9. Aplikacja webowa demonstratora
+
 
 Warstwa prezentacji systemu jest jednostronicową aplikacją webową, którą serwuje ten sam
 proces FastAPI co API. Pliki statyczne znajdują się w katalogu src/api/static/, a montowanie
@@ -1355,9 +1456,11 @@ odbywa się przez wbudowaną klasę StaticFiles. Trzymanie frontendu i backendu 
 procesie upraszcza demo: nie trzeba uruchamiać osobnego serwera Node.js ani Nginx, nie ma
 problemu z CORS i nie da się przypadkiem wdrożyć rozbieżnych wersji.
 
-4.9.1. Wybór technologii
 
-Frontend napisałem w czystym HTML, CSS i JavaScript, bez żadnego frameworku ani biblioteki
+### 4.9.1. Wybór technologii
+
+
+Frontend wykonano w czystym HTML, CSS i JavaScript, bez żadnego frameworku ani biblioteki
 zewnętrznej. Frameworki typu React czy Vue.js mają sens, gdy aplikacja ma rozbudowaną logikę
 widoku, dużo stanów lokalnych i potrzebę szybkiego prototypowania. Tutaj zakres funkcjonalny
 jest świadomie minimalny - jedno pole wejściowe i kilka paneli wyników - więc komplikowanie
@@ -1365,7 +1468,9 @@ stosu narzędziowego o transpilery i bundlery byłoby nieproporcjonalne do zysku
 zewnętrznych zależności jest natychmiast uruchamialna i nie wymaga osobnego okresu wsparcia
 dla łatania luk w bibliotekach.
 
-4.9.2. Schemat działania
+
+### 4.9.2. Schemat działania
+
 
 Aplikację tworzą trzy pliki. Plik index.html definiuje statyczną strukturę dokumentu z sześcioma
 głównymi panelami informacyjnymi. Plik styles.css zawiera własne reguły wizualne, oparte na
@@ -1393,27 +1498,29 @@ cechy) pełnią rolę pomocniczą, dostarczając kontekstu uzasadniającego werd
 
 
 
- Rysunek 2. Aplikacja webowa po analizie phishingu PayPal (studium 5.7.1) - werdykt PHISHING z
+ Rysunek 2. Aplikacja webowa po analizie phishingu PayPal  - werdykt PHISHING z
               prawdopodobieństwem 96,02%, siedem aktywnych reguł eksperckich.
 
 
 
 
-Rysunek 3. Aplikacja webowa po analizie URL Bank of America (studium 5.7.2) - werdykt LEGALNA,
+Rysunek 3. Aplikacja webowa po analizie URL Bank of America  - werdykt LEGALNA,
               brak aktywnych reguł, wszystkie warstwy zgodnie wskazują legitimate.
 
 
 
 
 
-Rysunek 4. Aplikacja webowa po analizie URL z adresem IP w prywatnym zakresie (studium 5.7.3) -
+Rysunek 4. Aplikacja webowa po analizie URL z adresem IP w prywatnym zakresie  -
           werdykt PHISHING z prawdopodobieństwem 99,41%, sześć aktywnych reguł.
 
 
 
 
 
-4.9.3. Komunikacja z API
+
+### 4.9.3. Komunikacja z API
+
 
 Aplikacja komunikuje się z backendem przez fetch, używając metody POST z ciałem w
 formacie JSON dla endpointów predykcji oraz GET dla sprawdzenia stanu. Wszystkie
@@ -1428,7 +1535,9 @@ pierwotnie planowaną na późniejszy etap pracy. Funkcjonalność batch CSV i u
 z poziomu UI pozostaje w fazie planowania.
 
 
-4.10. Testy automatyczne i zapewnienie jakości
+
+## 4.10. Testy automatyczne i zapewnienie jakości
+
 
 Pełne repozytorium zawiera zestaw testów automatycznych w katalogu tests/. Testy obejmują
 ekstrakcję cech, ewaluację reguł, trening klasyfikatorów, agregację wyników oraz endpointy
@@ -1718,11 +1827,6 @@ Tabele
    •   Tabela 1. Grupy cech URL ekstrahowanych przez PhishGuard.
    •   Tabela 2. Kategorie i liczba reguł w warstwie eksperckiej PhishGuard.
    •   Tabela 3. Wykaz endpointów API PhishGuard wraz z funkcjami.
-   •   Tabela 4. Wyniki klasyfikatorów bazowych (cechy URL, zbiór testowy temporalny).
-   •   Tabela 5. Porównanie F1-score klasyfikatorów bazowych i zoptymalizowanych GA.
-   •   Tabela 5b. Najlepsze hiperparametry znalezione przez algorytm genetyczny.
-   •   Tabela 6. Wyniki zespołów klasyfikatorów na zbiorze testowym temporalnym.
-   •   Tabela 7. Wyniki modeli wyspecjalizowanych dla wiadomości e-mail i SMS.
 
 
 Rysunki
@@ -1778,7 +1882,8 @@ between the three paradigms: ML ensemble, rule-based, and Bayesian.
 
 Key differences from classifier disagreement:
 - 3 paradigms vs 7 classifiers
-- Max entropy for 3 paradigms: log2(3) = 1.585
+- Votes take 2 classes (phishing/legitimate); max binary entropy = log2(2) = 1 bit
+  (a 2:1 split scores ~0.918, a unanimous vote scores 0)
 - Different probability scales (ML proba, rule score, Bayesian posterior)
 """
 
@@ -1830,10 +1935,7 @@ def calculate_paradigm_disagreement(
         votes[pred] = votes.get(pred, 0) + 1
 
     # Convert to binary for entropy calculation
-    binary_preds = [1 if pred == 'phishing' else 0
-                   for pred in predictions.values()]
-
-    # C
+    binary_preds = 
 ```
 
 **Wagi paradygmatów (ML 0,5 / reguły 0,3 / Bayes 0,2)** (`src/paradigms/aggregation/weights.py`):

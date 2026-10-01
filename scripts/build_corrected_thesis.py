@@ -64,6 +64,23 @@ INLINE = [
     # K9 — impersonal form.
     (r"Do projektu wybrałem", "Do projektu wybrano"),
     (r"Optymalizację zrealizowałem", "Optymalizację zrealizowano"),
+    # M1 — entropy denominator in the body (ch. 4.7): log2(2)=1, not log2(3).
+    (r"log 2 3", "log₂2 = 1 (dwie klasy głosów; dla rozkładu 2:1 ≈ 0,918, dla 4:3 ≈ 0,985)"),
+    # M2 — ensemble/LR claims contradicted by the common test.
+    (r"taka mieszanka heterogeniczna daje w\s+zespole zysk większy niż prosta suma składowych",
+     "różnorodność modeli uzasadnia sprawdzenie zespołu; na przeprowadzonym teście zespół nie uzyskał przewagi nad najlepszym modelem pojedynczym"),
+    (r"najlepszym pojedynczym klasyfikatorem \(F1=0,9749\)",
+     "klasyfikatorem o najwyższym CV-fitness podczas strojenia (0,9749); na odłożonym teście najwyższy F1 osiągnął MLP-GA (0,9583)"),
+    # M3 — soften the intro disagreement claim.
+    (r"przypadki graniczne, w których pojedyncze podejście mogłoby się mocno pomylić\.",
+     "próbki do ręcznej kontroli; związek flagi z częstością błędów wymaga osobnej oceny."),
+    # E5 — impersonal form.
+    (r"W praktyce sprawdziłem to na", "W praktyce sprawdzono to na"),
+    (r"Frontend napisałem w czystym HTML", "Frontend wykonano w czystym HTML"),
+    # E4 — dangling references to the removed section 5.7 / demo build.
+    (r"\(studium 5\.7\.\d\)", ""),
+    (r"z rozdziału 5\.7\.1", ""),
+    (r"używany do smoke-testów w rozdziale 5\.7,", "używany podczas prac;"),
     (r"Tabela 0\.", "Tabela 1."),
 ]
 
@@ -221,7 +238,28 @@ def clean(lines):
         toks = s.split()
         if len(toks) >= 6 and sum(1 for t in toks if len(t) == 1) / len(toks) > 0.5:
             continue
+        # E4 — drop the stale list-of-tables/5.7 entries (old Tables 4-7/5b,
+        # "zbiór testowy temporalny", removed case-study 5.7.x) from the wykaz.
+        if re.search(r"Tabela [4-7]b?\.|zbiór testowy temporalny|^•?\s*5\.7\.", s):
+            continue
         out.append(s)
+    return "\n".join(out)
+
+
+def mark_headings(text):
+    """Turn chapter/subchapter heading lines into Markdown headings so pandoc
+    emits Word Heading styles (needed for the auto-TOC; review E1)."""
+    out = []
+    for ln in text.split("\n"):
+        s = ln.strip()
+        if re.fullmatch(r"\d+\.\s+[A-ZŁŻŚ].{0,70}", s) and len(s) <= 72:
+            out.append(f"\n# {s}\n")
+        elif re.fullmatch(r"\d+\.\d+\.\s+[A-ZŁŻŚ].{0,70}", s) and len(s) <= 72:
+            out.append(f"\n## {s}\n")
+        elif re.fullmatch(r"\d+\.\d+\.\d+\.\s+[A-ZŁŻŚ].{0,70}", s) and len(s) <= 72:
+            out.append(f"\n### {s}\n")
+        else:
+            out.append(ln)
     return "\n".join(out)
 
 
@@ -242,7 +280,7 @@ def main():
         title = re.sub(pat, rep, title)
         body, _ = re.subn(pat, rep, body)
 
-    md = (title + "\n\n" + body + "\n\n" + RESULTS + "\n" + CONCLUSION + "\n"
+    md = (title + "\n\n" + mark_headings(body) + "\n\n" + RESULTS + "\n" + CONCLUSION + "\n"
           + "# 7. Bibliografia\n\n" + bib + "\n")
     # Appendix A — figures
     md += "\n\n# Załącznik A — rysunki\n\n"

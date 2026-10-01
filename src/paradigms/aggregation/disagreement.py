@@ -5,7 +5,8 @@ between the three paradigms: ML ensemble, rule-based, and Bayesian.
 
 Key differences from classifier disagreement:
 - 3 paradigms vs 7 classifiers
-- Max entropy for 3 paradigms: log2(3) = 1.585
+- Votes take 2 classes (phishing/legitimate); max binary entropy = log2(2) = 1 bit
+  (a 2:1 split scores ~0.918, a unanimous vote scores 0)
 - Different probability scales (ML proba, rule score, Bayesian posterior)
 """
 
