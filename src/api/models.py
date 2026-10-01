@@ -264,6 +264,90 @@ class MultiParadigmResponse(BaseModel):
     )
 
 
+class FeatureContribution(BaseModel):
+    """Single named, signed SHAP feature contribution (EXPL-02)."""
+
+    feature: str = Field(..., description="Feature name (from extract_url_features)")
+    shap_value: float = Field(
+        ...,
+        description="Signed SHAP contribution in standardized-feature space "
+                    "(relative contribution, not a raw probability unit)",
+    )
+    raw_value: float = Field(
+        ..., description="Unscaled raw feature value for this URL"
+    )
+
+
+class ShapExplanation(BaseModel):
+    """SHAP feature-importance block for the consolidated /explain response.
+
+    v1 is URL-only (content_type fixed to "url") and explains the single
+    representative RF Pipeline (model fixed to "rf") — see
+    09-RESEARCH.md Pitfall 2 (VotingClassifier is not SHAP-explained).
+    """
+
+    available: bool = Field(
+        ..., description="True if SHAP computation succeeded for this request"
+    )
+    content_type: Literal["url"] = Field(
+        "url", description="SHAP v1 scope: URL-only"
+    )
+    model: str = Field("rf", description="Representative model explained")
+    top_features: List[FeatureContribution] = Field(
+        default_factory=list,
+        description="Top-N signed contributions, ordered by descending |shap_value|",
+    )
+    note: str = Field(
+        "", description="Human-readable caveat/status note (e.g. scaled-space label)"
+    )
+
+
+class ExplainResponse(BaseModel):
+    """Response model for the consolidated POST /explain endpoint (Phase 9).
+
+    Reuses URLRequest for input validation (no new input surface) and
+    consolidates in ONE call: 7 individual ML predictions (EXPL-03),
+    paradigm contributions, SHAP top-10 (EXPL-02, URL-only), fired rules
+    with weights (EXPL-01), the fuller disagreement explanation (EXPL-04),
+    and an NL verdict enriched with the top SHAP feature (EXPL-05).
+    """
+
+    url: str
+    final_prediction: Literal["phishing", "legitimate"] = Field(
+        ..., description="Aggregated prediction from all paradigms"
+    )
+    final_probability: float = Field(
+        ..., ge=0.0, le=1.0, description="Weighted probability (threshold 0.5)"
+    )
+    confidence: float = Field(
+        ..., ge=0.5, le=1.0, description="Confidence level"
+    )
+    individual_predictions: List[ClassifierResult] = Field(
+        ..., description="Predictions from all 7 classifiers (EXPL-03)"
+    )
+    paradigm_contributions: ParadigmContributions = Field(
+        ..., description="Contributions from each paradigm"
+    )
+    shap: ShapExplanation = Field(
+        ..., description="SHAP feature importance (EXPL-02, URL-only)"
+    )
+    active_rules: List[FiredRule] = Field(
+        ..., description="Rules that fired from the rule-based system (EXPL-01)"
+    )
+    disagreement: ParadigmDisagreementInfo = Field(
+        ..., description="Cross-paradigm disagreement analysis"
+    )
+    disagreement_explanation: str = Field(
+        ..., description="Fuller per-paradigm disagreement text (EXPL-04)"
+    )
+    explanation: str = Field(
+        ..., description="Human-readable NL verdict, SHAP-enriched (EXPL-05)"
+    )
+    processing_time_ms: float = Field(
+        ..., description="Total processing time in milliseconds"
+    )
+
+
 class EmailTextRequest(BaseModel):
     """Request model for raw email text prediction."""
 

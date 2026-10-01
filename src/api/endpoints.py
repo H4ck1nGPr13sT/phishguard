@@ -28,13 +28,18 @@ from src.api.models import (
     EmailTextRequest,
     SMSRequest,
     EmailSMSResponse,
+    FeatureContribution,
+    ShapExplanation,
+    ExplainResponse,
 )
 from src.features.extractors import extract_url_features, extract_email_features, extract_sms_features, ContentType
 from src.features.image_features import load_and_ocr, extract_visual_features
 from src.api.main import ml_models
-from src.api.inference import predict_url_multi, predict_email_text, predict_sms_text
+from src.api.inference import predict_url_multi, predict_email_text, predict_sms_text, ModelsNotLoaded
 from src.models.ensemble import get_individual_predictions
 from src.models.disagreement import get_disagreement_summary
+from src.paradigms.aggregation.disagreement import get_disagreement_explanation
+from src.explainability.shap_explain import shap_top_features
 
 router = APIRouter()
 
@@ -91,6 +96,7 @@ def api_info():
             "/predict/email/file",
             "/predict/sms",
             "/predict/image",
+            "/explain",
             "/health",
             "/docs"
         ],
@@ -309,6 +315,160 @@ def predict_multi_paradigm(request: URLRequest):
             status_code=500,
             detail=f"Multi-paradigm prediction failed: {str(e)}"
         )
+
+
+@router.post("/explain", response_model=ExplainResponse, tags=["explainability"])
+def explain(request: URLRequest):
+    """
+    Consolidated on-demand explainability endpoint (Phase 9).
+
+    Separate from /predict/multi-paradigm (SHAP is slow and must never run
+    on the fast prediction path — locked decision). Runs SHAP TreeExplainer
+    URL-only (EXPL-02) and consolidates it with the already-computed
+    EXPL-01/03/04/05 signals (fired rules, 7 individual ML predictions,
+    cross-paradigm disagreement, natural-language verdict) into ONE
+    response — surfacing/enriching existing aggregator/ensemble/
+    disagreement output rather than reinventing it.
+
+    Requirements addressed:
+    - EXPL-02: SHAP feature importance for the ML decision (URL-only, RF)
+    - EXPL-03: All-classifier comparison data (7 individual predictions)
+    - EXPL-04: Fuller cross-paradigm disagreement explanation
+    - EXPL-05: NL verdict enriched with the top SHAP feature
+
+    NOTE: Using sync 'def' not 'async def' because ML/SHAP inference is
+    CPU-bound, not I/O-bound. FastAPI runs sync functions in threadpool
+    automatically.
+    """
+    start_time = time.time()
+
+    required_models = ["phishing_detector", "voting_soft", "rule_engine", "bayesian", "aggregator"]
+    missing = [m for m in required_models if m not in ml_models]
+    if missing:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Required models not loaded: {missing}. "
+                   f"Run model training scripts first."
+        )
+
+    if "shap_explainer" not in ml_models:
+        raise HTTPException(
+            status_code=503,
+            detail="SHAP explainer not available. Install shap and restart."
+        )
+
+    try:
+        aggregated = predict_url_multi(request.url)
+    except ModelsNotLoaded as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    try:
+        # EXPL-03: all 7 individual classifier predictions.
+        features = extract_url_features(request.url)
+        feature_array = np.array([list(features.values())])
+        individual_preds = get_individual_predictions(ml_models["voting_soft"], feature_array)
+        individual_predictions = [
+            ClassifierResult(name=name, **pred) for name, pred in individual_preds.items()
+        ]
+
+        # EXPL-02: SHAP top-10 (URL-only, RF). An unexpected SHAP failure
+        # here degrades to available=False + a note rather than a 500 — a
+        # missing explainer entirely was already 503'd above.
+        try:
+            top_features = shap_top_features(request.url, top_n=10)
+            shap_block = ShapExplanation(
+                available=True,
+                content_type="url",
+                model="rf",
+                top_features=[FeatureContribution(**t) for t in top_features],
+                note="SHAP importance is URL-only for v1 (representative RF "
+                     "model); values are relative contributions in "
+                     "standardized-feature space.",
+            )
+        except Exception as e:
+            top_features = []
+            shap_block = ShapExplanation(
+                available=False,
+                content_type="url",
+                model="rf",
+                top_features=[],
+                note=f"SHAP computation failed: {str(e)}",
+            )
+
+        # EXPL-04: fuller per-paradigm disagreement text (currently unused
+        # by /predict/multi-paradigm).
+        disagreement_explanation = get_disagreement_explanation(aggregated["disagreement"])
+
+        # EXPL-05: NL verdict enriched with the top SHAP feature.
+        explanation = aggregated["explanation"]
+        if top_features:
+            top_feature = top_features[0]
+            explanation += (
+                f" Top contributing feature: {top_feature['feature']} "
+                f"(contribution {top_feature['shap_value']:+.4f})."
+            )
+
+        paradigm_contributions = ParadigmContributions(
+            ml_ensemble=ParadigmContribution(
+                probability=aggregated['paradigm_contributions']['ml_ensemble']['probability'],
+                weight=aggregated['paradigm_contributions']['ml_ensemble']['weight'],
+                weighted_contribution=aggregated['paradigm_contributions']['ml_ensemble']['weighted_contribution'],
+                prediction=aggregated['paradigm_contributions']['ml_ensemble']['prediction']
+            ),
+            rules=ParadigmContribution(
+                probability=aggregated['paradigm_contributions']['rules']['probability'],
+                weight=aggregated['paradigm_contributions']['rules']['weight'],
+                weighted_contribution=aggregated['paradigm_contributions']['rules']['weighted_contribution'],
+                prediction=aggregated['paradigm_contributions']['rules']['prediction']
+            ),
+            bayesian=ParadigmContribution(
+                probability=aggregated['paradigm_contributions']['bayesian']['probability'],
+                weight=aggregated['paradigm_contributions']['bayesian']['weight'],
+                weighted_contribution=aggregated['paradigm_contributions']['bayesian']['weighted_contribution'],
+                prediction=aggregated['paradigm_contributions']['bayesian']['prediction']
+            )
+        )
+
+        disagreement = ParadigmDisagreementInfo(
+            score=aggregated['disagreement']['score'],
+            is_edge_case=aggregated['disagreement']['is_edge_case'],
+            vote_distribution=aggregated['disagreement']['vote_distribution'],
+            probability_variance=aggregated['disagreement']['probability_variance'],
+            disagreeing_paradigms=aggregated['disagreement']['disagreeing_paradigms'],
+            probability_spread=aggregated['disagreement']['probability_spread']
+        )
+
+        active_rules = [
+            FiredRule(
+                name=rule.get('name', ''),
+                description=rule.get('description', ''),
+                weight=rule.get('weight', 0.0),
+                matched_values=rule.get('matched_values', [])
+            )
+            for rule in aggregated['active_rules']
+        ]
+
+        processing_time = (time.time() - start_time) * 1000
+
+        return ExplainResponse(
+            url=request.url,
+            final_prediction=aggregated['final_prediction'],
+            final_probability=aggregated['final_probability'],
+            confidence=aggregated['confidence'],
+            individual_predictions=individual_predictions,
+            paradigm_contributions=paradigm_contributions,
+            shap=shap_block,
+            active_rules=active_rules,
+            disagreement=disagreement,
+            disagreement_explanation=disagreement_explanation,
+            explanation=explanation,
+            processing_time_ms=processing_time
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Explain failed: {str(e)}")
 
 
 @router.post("/predict/email", response_model=EmailSMSResponse, tags=["prediction"])
