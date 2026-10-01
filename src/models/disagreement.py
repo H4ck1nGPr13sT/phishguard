@@ -54,9 +54,19 @@ def calculate_disagreement(individual_predictions: dict) -> float:
     # Calculate Shannon entropy with base=2 (bits)
     H = entropy(pk, base=2)
 
-    # Normalize by maximum possible entropy
+    # Normalize by the maximum entropy of the BINARY vote distribution.
+    # Votes take at most 2 values (phishing / legitimate), so the maximum
+    # Shannon entropy is log2(2) = 1 bit, independent of the number of voters.
+    #
+    # NOTE: dividing by log2(n_classifiers) was a defect — it made the score
+    # unreachably small for n > 2. With 7 classifiers the most even split (4/3)
+    # gave only 0.351, and with 3 paradigms (2/1) only 0.579, so the 0.7
+    # edge-case threshold could never be crossed and is_edge_case was always
+    # False. Normalizing by the number of CLASSES (2) fixes this: the score is
+    # now the standard normalized binary entropy in [0, 1], reaching ~0.985 for
+    # a 4/3 split of 7 votes and ~0.918 for a 2/1 split of 3 votes.
     n_classifiers = len(predictions)
-    max_H = np.log2(n_classifiers) if n_classifiers > 1 else 0.0
+    max_H = 1.0 if n_classifiers > 1 else 0.0  # log2(2) = 1 (two vote classes)
 
     # Return normalized entropy
     if max_H > 0:

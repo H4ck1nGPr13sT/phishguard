@@ -66,15 +66,20 @@ class TestParadigmDisagreement:
         assert result['is_edge_case'] == False
         assert len(result['disagreeing_paradigms']) == 0
 
-    def test_2_1_split_moderate_disagreement(self):
-        """Test 2-1 split gives moderate disagreement."""
+    def test_2_1_split_is_edge_case(self):
+        """A 2-1 paradigm split is a (flagged) edge case.
+
+        Binary votes are normalized by log2(2)=1, so a 2/1 split scores
+        H(1/3) = -(2/3*log2(2/3) + 1/3*log2(1/3)) ~= 0.918 — above the 0.7
+        threshold. Any non-unanimous 3-paradigm vote is therefore an edge case.
+        """
         result = calculate_paradigm_disagreement(
             'phishing', 0.9,
             'legitimate', 0.3,
             'phishing', 0.85
         )
-        # With 2 phishing, 1 legitimate: entropy = -2/3*log2(2/3) - 1/3*log2(1/3)
-        assert 0.3 < result['score'] < 0.7
+        assert 0.91 < result['score'] < 0.92
+        assert result['is_edge_case'] is True
         assert 'rules' in result['disagreeing_paradigms']
 
     def test_unanimous_legitimate(self):

@@ -65,7 +65,12 @@ def calculate_paradigm_disagreement(
     pk = counts / len(binary_preds)
 
     H = entropy(pk, base=2)
-    max_H = np.log2(3)  # 3 paradigms, max entropy = log2(3)
+    # Normalize by the maximum entropy of the BINARY vote distribution:
+    # paradigms vote over 2 classes (phishing / legitimate), so max entropy is
+    # log2(2) = 1 bit. Dividing by log2(3) was a defect that capped the score at
+    # 0.579 for a 2/1 split, making the 0.7 edge-case threshold unreachable.
+    # With the correct normalizer any non-unanimous 3-paradigm vote scores 0.918.
+    max_H = 1.0  # log2(2) = 1 (two vote classes)
     disagreement_score = H / max_H if max_H > 0 else 0.0
 
     # Identify majority and dissenters
