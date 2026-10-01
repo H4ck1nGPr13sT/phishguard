@@ -265,6 +265,39 @@ class TestOpenAPI:
         assert "/predict" in schema["paths"]
         assert "/health" in schema["paths"]
 
+    def test_openapi_routes_have_summaries(self, client):
+        """DOC-03 regression guard: every /predict* and /explain route has
+        a non-empty summary in the OpenAPI schema.
+
+        Data-driven over schema["paths"] (not a hardcoded route list) so
+        this guard automatically covers future routes. Uses the mocked
+        `client` fixture — app.openapi() is built from route decorators,
+        no lifespan required. RED until Plan 10-03 adds `summary=` to each
+        route decorator in src/api/endpoints.py.
+        """
+        response = client.get("/openapi.json")
+        assert response.status_code == 200
+        schema = response.json()
+
+        target_paths = [
+            path
+            for path in schema["paths"]
+            if path.startswith("/predict") or path == "/explain"
+        ]
+        assert target_paths, "Expected at least one /predict* or /explain route"
+
+        missing_summaries = []
+        for path in target_paths:
+            operation = schema["paths"][path].get("post")
+            assert operation is not None, f"{path} has no POST operation"
+            summary = operation.get("summary")
+            if not summary or not summary.strip():
+                missing_summaries.append(path)
+
+        assert not missing_summaries, (
+            f"Routes missing a non-empty OpenAPI summary: {missing_summaries}"
+        )
+
 
 class TestEnsemblePredictEndpoint:
     """Test ensemble prediction endpoint."""
