@@ -31,11 +31,11 @@ STALE_NUMBERS = ["0,9701", "0,9747", "0,9764", "0,9778", "0,9686", "0,9733",
                  "+0,0535", "+0,0685", "98,4", "97,47"]
 
 FIGURES = [
-    ("reports/figury/strona-25.png", "Rysunek A1. Architektura systemu (s. 25 oryginału)."),
-    ("reports/figury/strona-26.png", "Rysunek A2. Architektura / przepływ danych (s. 26 oryginału)."),
-    ("reports/figury/strona-48.png", "Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału)."),
-    ("reports/figury/strona-49.png", "Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału)."),
-    ("reports/figury/strona-50.png", "Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału)."),
+    ("reports/figury/strona-25.png", "Rysunek A1. Architektura systemu (render s. 25 oryginału)."),
+    ("reports/figury/strona-26.png", "Rysunek A2. Architektura / przepływ danych (render s. 26 oryginału)."),
+    ("reports/figury2/zrzut-000.png", "Rysunek A3. Interfejs — zrzut ekranu (s. 48 oryginału)."),
+    ("reports/figury2/zrzut-001.png", "Rysunek A4. Interfejs — zrzut ekranu (s. 49 oryginału)."),
+    ("reports/figury2/zrzut-002.png", "Rysunek A5. Interfejs — zrzut ekranu (s. 50 oryginału)."),
 ]
 
 # ---- ERRATA block prepended to the document -------------------------------
@@ -233,8 +233,78 @@ def main():
     OUT_MD.write_text(md, encoding="utf-8")
     subprocess.run(["pandoc", str(OUT_MD), "-o", str(OUT_DOCX)], check=True)
     _apply_wszib_styles(OUT_DOCX)
+    _apply_structure(OUT_DOCX)
     print(f"OK -> {OUT_DOCX.relative_to(ROOT)} ({OUT_DOCX.stat().st_size} B)")
     return 0
+
+
+def _field(run, instr, placeholder):
+    """Insert a Word field (e.g. PAGE, TOC) into a run."""
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+    b = OxmlElement("w:fldChar"); b.set(qn("w:fldCharType"), "begin")
+    it = OxmlElement("w:instrText"); it.set(qn("xml:space"), "preserve"); it.text = instr
+    sep = OxmlElement("w:fldChar"); sep.set(qn("w:fldCharType"), "separate")
+    t = OxmlElement("w:t"); t.text = placeholder
+    end = OxmlElement("w:fldChar"); end.set(qn("w:fldCharType"), "end")
+    for el in (b, it, sep, t, end):
+        run._r.append(el)
+
+
+def _apply_structure(path):
+    """Heading styles on body chapter/subchapter lines, an auto-updating TOC,
+    centered footer page numbers (title page without a number), and 10 pt bold
+    centered object captions — per the WSZiB standard."""
+    import re as _re
+    from docx import Document
+    from docx.shared import Pt
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    d = Document(str(path))
+
+    h1 = _re.compile(r"^\d+\.\s+\S")            # "1. Wstęp"
+    h2 = _re.compile(r"^\d+\.\d+\.?\s+\S")        # "2.1. ..."
+    h3 = _re.compile(r"^\d+\.\d+\.\d+\.?\s+\S")   # "2.1.1. ..."
+    cap = _re.compile(r"^(Rysunek|Tabela|Wykres|Schemat)\s+\d", _re.IGNORECASE)
+
+    for p in d.paragraphs:
+        txt = p.text.strip()
+        if not txt or len(txt) > 90:
+            continue
+        try:
+            if h3.match(txt):
+                p.style = d.styles["Heading 3"]
+            elif h2.match(txt):
+                p.style = d.styles["Heading 2"]
+            elif h1.match(txt):
+                p.style = d.styles["Heading 1"]
+            elif cap.match(txt):
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for r in p.runs:
+                    r.font.size = Pt(10); r.font.bold = True
+        except KeyError:
+            pass
+
+    # Auto TOC at the very top
+    first = d.paragraphs[0]
+    toc_p = first.insert_paragraph_before("Spis treści")
+    toc_p.style = d.styles["Heading 1"]
+    toc_field_p = toc_p.insert_paragraph_before("")
+    # move the field paragraph to AFTER the heading
+    toc_p._p.addnext(toc_field_p._p)
+    _field(toc_field_p.add_run(), 'TOC \\o "1-3" \\h \\z \\u',
+           "Spis treści — kliknij i naciśnij F9, aby zaktualizować")
+
+    # Footer page numbers, centered; first page (title) without a number
+    for sec in d.sections:
+        sec.different_first_page_header_footer = True
+        f = sec.footer
+        fp = f.paragraphs[0] if f.paragraphs else f.add_paragraph()
+        fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        _field(fp.add_run(), "PAGE", "1")
+        # ensure first-page footer stays empty
+        sec.first_page_footer.is_linked_to_previous = False
+
+    d.save(str(path))
 
 
 def _apply_wszib_styles(path):
