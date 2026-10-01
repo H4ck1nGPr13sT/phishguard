@@ -27,6 +27,7 @@ from src.paradigms.rules import RuleEngine
 from src.paradigms.bayesian import BayesianClassifier
 from src.paradigms.aggregation import MultiParadigmAggregator
 from src.features.ocr import resolve_ocr_backend, NullOCRBackend
+from src.explainability.shap_explain import warm_shap_explainer
 import joblib
 
 # Global model storage - loaded once at startup
@@ -174,6 +175,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Warning: Failed to warm OCR backend, falling back to NullOCRBackend: {e}")
         ml_models["ocr_backend"] = NullOCRBackend()
+
+    # Warm the SHAP explainer (Phase 9 EXPL-02). Mirrors the OCR warm-up's
+    # graceful-degrade pattern: import shap + build the TreeExplainer here
+    # (absorbing numba/llvmlite's ~1.9s JIT cold-import off the request
+    # path), but ANY failure (missing shap install, stale-cache mismatch,
+    # etc.) must NOT crash startup — just leave "shap_explainer" unset so
+    # POST /explain later returns 503 instead of taking down the server.
+    try:
+        ml_models["shap_explainer"] = warm_shap_explainer(ml_models["phishing_detector"])
+        print("SHAP explainer warmed (TreeExplainer on RF pipeline)")
+    except Exception as e:
+        print(f"Warning: Failed to warm SHAP explainer, /explain will return 503: {e}")
 
     total_models = len(ml_models)
     print(f"Total models loaded: {total_models} (1 primary + {ensemble_loaded} ensemble + Phase 5 paradigms + {email_sms_loaded} email/SMS)")
