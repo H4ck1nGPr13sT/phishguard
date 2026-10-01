@@ -1,0 +1,11 @@
+U9 LATENCY — POST /predict/multi-paradigm, n=50 (warmed, in-process)
+  median = 15.6 ms   p95 = 16.6 ms   min = 13.5   max = 26.7
+  under 500 ms budget at p95: True
+==========================================================================
+U10 LAYER CONTRIBUTION — n=50 labeled URLs (40 phishing / 10 legit)
+  ML-only accuracy    : 48/50 = 0.960
+  aggregator accuracy : 46/50 = 0.920
+  decisions changed by aggregator vs ML-only: 2
+    [WRONG] true=1 ML=1(p=0.53) -> AGG=0(p=0.47) edge=True  https://us-i.github.io/x/mobile.html
+    [WRONG] true=1 ML=1(p=0.83) -> AGG=0(p=0.42) edge=True  https://dlaskdlaskdaskldasd.sbs/
+==========================================================================
