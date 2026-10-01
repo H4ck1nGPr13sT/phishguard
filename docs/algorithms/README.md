@@ -17,17 +17,18 @@ For the live route reference, see [../api.md](../api.md).
 | [data-pipeline.md](./data-pipeline.md) | Dataset sources, Pandera validation, deduplication, temporal train/val/test split, SMOTE + undersampling class balancing, joblib feature caching | Written (this plan) |
 | [ml-classifiers.md](./ml-classifiers.md) | The 7 ML classifiers (Random Forest, SVM, MLP, XGBoost, Logistic Regression, Naive Bayes, Decision Tree): theory, project configuration, measured performance, ensemble role | Written (this plan) |
 | [ensemble.md](./ensemble.md) | Soft voting, hard voting, stacking (LogisticRegression meta-model), and normalized-Shannon-entropy classifier disagreement | Written (this plan) |
-| genetic-algorithm.md | DEAP-based hyperparameter optimization, binary GA feature selection, GA ensemble-weight optimization | Added by a later plan (10-05) |
-| rule-based-system.md | YAML-configured weighted expert-rule engine | Added by a later plan (10-05) |
-| bayesian.md | Gaussian Naive Bayes posterior-probability classifier | Added by a later plan (10-05) |
+| [genetic-algorithm.md](./genetic-algorithm.md) | DEAP-based hyperparameter optimization, binary GA feature selection, GA ensemble-weight optimization | Written (this plan) |
+| [rule-based-system.md](./rule-based-system.md) | YAML-configured weighted expert-rule engine | Written (this plan) |
+| [bayesian.md](./bayesian.md) | Gaussian Naive Bayes posterior-probability classifier | Written (this plan) |
 | aggregation.md | Cross-paradigm `MultiParadigmAggregator` and cross-paradigm disagreement | Added by a later plan (10-06) |
 | ocr-visual.md | EasyOCR text extraction and visual/brand-similarity heuristics | Added by a later plan (10-06) |
 | explainability.md | SHAP `TreeExplainer`-based explanation generation | Added by a later plan (10-06) |
 
-The six rows above without a link are listed here as forward references
-only (plain text, not Markdown links) so the internal-link test does not
-see a dangling target before Plans 10-05/10-06 land and extend this table
-with their own linked rows.
+The three rows above without a link (`aggregation.md`, `ocr-visual.md`,
+`explainability.md`) are listed here as forward references only (plain
+text, not Markdown links) so the internal-link test does not see a
+dangling target before Plan 10-06 lands and extends this table with its
+own linked rows.
 
 ## Reading order
 
