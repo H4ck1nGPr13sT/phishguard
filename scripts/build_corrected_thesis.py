@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Build a corrected DOCX of the thesis from the PDF text extraction.
+"""Build ONE coherent corrected DOCX of the thesis (addressing review 2: K1-K10).
 
-Pipeline: pdftotext -layout praca-inzynierska.pdf  ->  clean  ->  inject
-corrections (verified numbers, rebuilt tables, editorial fixes, errata)  ->
-Markdown  ->  pandoc  ->  praca-inzynierska-poprawiona.docx
+Merges into a single document in standard order — title page first, chapters
+1-4, ONE corrected Chapter 5, ONE rewritten conclusion, bibliography, appendices.
+The old Chapter 5 / old conclusions and the errata are NOT in the thesis (the
+errata is written separately to reports/errata.md). Figures cannot be recovered
+from text extraction; the architecture diagram is a cropped render and the UI
+screenshots are the real embedded images.
 
-Honesty note: figures/screenshots cannot be recovered from a text extraction;
-their locations are marked [RYSUNEK — wstaw obraz z oryginału]. The author does
-a final formatting/figures pass. All numeric corrections come from the honest
-evaluation scripts in scripts/ and the reports in reports/.
+Pipeline: pdftotext -layout -> slice by chapter -> clean + inject fixes ->
+Markdown -> pandoc -> python-docx (WSZiB styles + structure).
 """
 import re
 import subprocess
@@ -19,68 +20,70 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC_TXT = Path("/tmp/praca_txt.txt")
 OUT_MD = ROOT / "reports/praca-poprawiona.md"
 OUT_DOCX = ROOT / "praca-inzynierska-poprawiona.docx"
+ERRATA_MD = ROOT / "reports/errata.md"
 
 AUTHOR = "Łukasz Drążek"
 PROMOTER = "dr hab. inż. Rafał Dreżewski"
 
-# Stale Chapter-5 numbers contradicted by the honest evaluation — any extracted
-# body line containing one of these is dropped, so the old table values do not
-# coexist with the corrected Chapter 5 above.
+# Chapter boundaries in /tmp/praca_txt.txt (1-indexed, from recon):
+TITLE = (215, 266)       # strona tytułowa
+CH1_4 = (348, 1860)      # rozdziały 1-4 (body)
+BIB = (2405, None)       # 7. Bibliografia -> koniec
+# old Chapter 5 (1861-2264) and old conclusions (2265-2404) are dropped.
+
 STALE_NUMBERS = ["0,9701", "0,9747", "0,9764", "0,9778", "0,9686", "0,9733",
                  "0,9751", "0,9766", "0,9840", "0,9823", "0,9685",
                  "+0,0535", "+0,0685", "98,4", "97,47"]
 
-FIGURES = [
-    ("reports/figury2/diagram_architektura.png", "Rysunek A1. Architektura logiczna systemu PhishGuard (przycięty diagram, s. 25)."),
-    ("reports/figury2/zrzut-000.png", "Rysunek A2. Interfejs — zrzut ekranu (s. 48 oryginału)."),
-    ("reports/figury2/zrzut-001.png", "Rysunek A3. Interfejs — zrzut ekranu (s. 49 oryginału)."),
-    ("reports/figury2/zrzut-002.png", "Rysunek A4. Interfejs — zrzut ekranu (s. 50 oryginału)."),
+INLINE = [
+    (r"\[Imię i Nazwisko Autora\]", AUTHOR),
+    (r"\[stopień\.\s*imię nazwisko promotora\]", PROMOTER),
+    # U6 + K9 — grammatical whole-sentence fix: three decision layers at
+    # prediction time; GA is prior optimization, not a 4th vote. Impersonal.
+    (r"Postanowiłem zaprojektować i wykonać system wykrywania phishingu, w którym wynik\s+"
+     r"klasyfikacji opiera się nie na jednym modelu, ale na połączonej analizie czterech uzupełniających\s+"
+     r"się podejść: uczenia maszynowego, algorytmu ewolucyjnego, systemu regułowego i",
+     "Zaprojektowano i wykonano system wykrywania phishingu, w którym wynik "
+     "klasyfikacji opiera się nie na jednym modelu, lecz na trzech warstwach "
+     "decyzyjnych działających podczas predykcji: zespole uczenia maszynowego, "
+     "systemie regułowym i klasyfikatorze bayesowskim. Algorytm genetyczny pełni "
+     "rolę wcześniejszej optymalizacji modeli, a nie czwartej warstwy głosującej. "
+     "Trzy warstwy predykcji łączą: uczenie maszynowe, system regułowy i podejście"),
+    # U7 — Optuna default sampler is TPE, not a Gaussian process.
+    (r"Ma jednak wady\.\s*Modeluje funkcję jako proces gaussowski,\s*co przy\s*"
+     r"zmiennych kategorialnych wymaga sztucznych przekształceń\.\s*Poza tym może utykać w\s*"
+     r"lokalnych ekstremach\.",
+     "Domyślnym samplerem biblioteki Optuna jest TPE (Tree-structured Parzen "
+     "Estimator), a wariant oparty na procesie Gaussa stanowi osobną, opcjonalną "
+     "metodę. Optymalizacja bayesowska bywa jednak wrażliwa na zmienne kategorialne "
+     "i dobór przestrzeni; w tym projekcie wartości kategorialne i tak mapowane są "
+     "na indeksy (src/optimization/search_spaces.py). Algorytm genetyczny wybrano ze "
+     "względu na naturalną obsługę mieszanych przestrzeni oraz prostą kontrolę "
+     "kosztu obliczeń, a nie z powodu udowodnionej przewagi nad optymalizacją "
+     "bayesowską."),
+    # K9 — impersonal form.
+    (r"Do projektu wybrałem", "Do projektu wybrano"),
+    (r"Optymalizację zrealizowałem", "Optymalizację zrealizowano"),
+    (r"Tabela 0\.", "Tabela 1."),
 ]
 
-# ---- ERRATA block prepended to the document -------------------------------
-ERRATA = f"""# Wykaz poprawek (errata) — wersja poprawiona
-
-**Autor:** {AUTHOR}  **Promotor:** {PROMOTER}
-
-Niniejsza wersja nanosi poprawki wynikające z recenzji. Kluczowe zmiany
-merytoryczne (zweryfikowane w kodzie i udokumentowane skryptami w `scripts/`
-oraz raportami w `reports/`):
-
-- **U1 — miara rozbieżności.** Naprawiono normalizację entropii: dzielenie przez
-  log2(2)=1 (liczba klas), nie przez log2(liczby głosujących). Próg 0,7 jest
-  teraz osiągalny i `is_edge_case` działa. Skrypt: `src/*/disagreement.py`,
-  testy: `tests/test_disagreement.py`.
-- **U2/U3 — wyniki URL.** Wszystkie warianty oceniono na jednym wspólnym
-  odłożonym teście (`scripts/evaluate_url_models_honest.py`,
-  `reports/url_eval_honest.csv`). Rozdzielono F1 testowe od CV-fitness.
-- **U4 — e-mail/SMS.** Liczby pochodzą z 5-krotnej CV na danych syntetycznych
-  (`scripts/evaluate_email_sms_honest.py`), nie z metadanych modeli.
-- **U9/U10 — latencja i warstwy.** Latencja jako rozkład (mediana 15 ms, p95
-  16 ms); wkład warstw zmierzony — agregator nie poprawił decyzji względem
-  samego ML (`scripts/evaluate_latency_and_layers.py`).
-- **U6** — ujednolicono: trzy warstwy decyzyjne (ML, reguły, Bayes) + GA jako
-  wcześniejsza optymalizacja (nie „cztery podejścia").
-- **U7** — poprawiono opis Optuny (domyślny sampler TPE, nie proces Gaussa).
-- **U5/U8/U11/U12** — okładka, zakres demonstratora, listingi, numeracja.
-
----
-
-"""
-
-# ---- Rebuilt Chapter-5 results (verified numbers) -------------------------
 RESULTS = """
-# Rozdział 5 — Wyniki (wersja poprawiona)
+# 5. Wyniki projektu
 
-> Wszystkie wyniki URL pochodzą z jednego protokołu: wspólny odłożony zbiór
-> testowy z artefaktu `cache/url_training_data.joblib` (200 train / 50 test,
-> 25/25, 30 cech), podział **losowy stratyfikowany** (`random_state=42`) —
-> **nie temporalny**. Skrypt: `scripts/evaluate_url_models_honest.py`, raport:
-> `reports/url_eval_honest.csv`. Mały zbiór testowy (50 próbek) oznacza, że
-> różnice są orientacyjne.
+Wszystkie wyniki URL pochodzą z jednego protokołu: wspólny odłożony zbiór testowy
+z artefaktu `cache/url_training_data.joblib` (200 próbek treningowych, 50 testowych,
+25/25, 30 cech), podział **losowy stratyfikowany** (`random_state=42`) — nie
+temporalny. Skrypt: `scripts/evaluate_url_models_honest.py`, raport:
+`reports/url_eval_honest.csv`. Mały zbiór testowy (50 próbek) oznacza, że różnice
+są orientacyjne i opisowe.
 
-## 5.2–5.3. Klasyfikatory: baza vs GA na tym samym teście
+## 5.1. Klasyfikatory bazowe i zoptymalizowane GA (wspólny test)
 
-| Klasyfikator | F1 baza (test) | F1 GA (test) | Zysk (test) | CV-fitness (osobno) |
+Każdy klasyfikator oceniono na tym samym odłożonym teście. Kolumna „CV-fitness" to
+F1 z 5-krotnej walidacji krzyżowej najlepszego osobnika GA i jest inną wielkością
+niż wynik testowy; nie należy ich od siebie odejmować.
+
+| Klasyfikator | F1 baza (test) | F1 GA (test) | Zysk (test) | CV-fitness |
 |---|---|---|---|---|
 | Logistic Regression | 0,9200 | 0,9362 | +0,0162 | 0,9749 |
 | Random Forest | 0,9091 | 0,9259 | +0,0168 | 0,9705 |
@@ -90,82 +93,129 @@ RESULTS = """
 | Naive Bayes | 0,9020 | 0,9020 | +0,0000 | 0,9438 |
 | Decision Tree | 0,8980 | 0,9259 | +0,0280 | 0,9656 |
 
-Na wspólnym teście optymalizacja GA daje niewielką poprawę F1 (od +0,000 dla
-Naive Bayes do +0,042 dla MLP). Kolumna „CV-fitness" to F1 z 5-krotnej walidacji
-krzyżowej najlepszego osobnika i jest **inną wielkością** niż wynik testowy;
-wcześniej raportowane większe „zyski" wynikały z odejmowania tych dwóch wielkości
-i nie są poprawnym oszacowaniem poprawy na teście.
+Na wspólnym teście optymalizacja GA dała niewielką poprawę F1 (od +0,000 dla Naive
+Bayes do +0,042 dla MLP). Jest to wynik jednego losowego podziału; stabilności
+poprawy przy innych ziarnach nie badano, a koszt wyszukiwania (populacja 50,
+30 generacji) nie jest tu zestawiony z wielkością zysku.
 
-## 5.4. Zespoły (ten sam test)
+## 5.2. Zespoły klasyfikatorów (wspólny test)
 
 | Wariant | F1 (test) |
 |---|---|
 | Hard voting | 0,9200 |
 | Soft voting | 0,9231 |
 | Stacking | 0,9231 |
-| **Najlepszy pojedynczy (MLP-GA)** | **0,9583** |
+| Najlepszy pojedynczy (MLP-GA) | 0,9583 |
 
-Na wspólnym zbiorze testowym zespoły osiągają F1 ≈ 0,92 i **nie przewyższają**
-najlepszego pojedynczego modelu zoptymalizowanego GA (MLP, 0,958). Wynik nie
-potwierdza przewagi zespołów i tak jest opisany.
+Na wspólnym zbiorze testowym zespoły osiągnęły F1 ≈ 0,92 i **nie przewyższyły**
+najlepszego pojedynczego modelu zoptymalizowanego GA (MLP, 0,958). W tym
+eksperymencie zespół nie uzyskał przewagi; wynik ten opisano zgodnie z pomiarem.
 
-## 5.5. Modele wyspecjalizowane (e-mail, SMS) — dane syntetyczne
+## 5.3. Modele wyspecjalizowane (e-mail, SMS) — dane syntetyczne
+
+Trzy różne wielkości należy rozróżnić. Zapisane w modelach pole `test_accuracy=1,0`
+pochodzi z **syntetycznego odłożonego zbioru 20%** utworzonego przez skrypt
+treningowy (`scripts/train_email_sms_models.py`, podział 80/20). Niezależne
+5-krotne CV (`scripts/evaluate_email_sms_honest.py`) dało: e-mail acc 0,985 /
+F1 0,984, SMS acc 1,0 / F1 1,0. Ewaluacja na pełnym zbiorze daje 1,0 (ten sam
+zbiór, na którym trenowano) i jest wyłącznie kontrolą, nie miarą generalizacji.
 
 | Typ | 5-fold CV acc | 5-fold CV F1 |
 |---|---|---|
 | E-mail (65 cech) | 0,985 | 0,984 |
 | SMS (70 cech) | 1,000 | 1,000 |
 
-Wartości pochodzą z 5-krotnej stratyfikowanej walidacji krzyżowej na zbiorze
-**syntetycznym** (200 próbek/typ; `scripts/evaluate_email_sms_honest.py`).
-Zapisane w modelach `test_accuracy=1,0` to wynik na danych treningowych
-(memoryzacja), nie miara generalizacji. Wynik SMS równy 1,0 wynika z trywialnej
-separowalności danych syntetycznych. Żaden z tych wyników nie mierzy skuteczności
-na rzeczywistych wiadomościach.
+Istotne ograniczenie zakresu: dane są syntetyczne i generowane z 20 szablonów na
+klasę dla każdego typu (`scripts/create_email_sms_dataset.py`). W walidacji
+krzyżowej większość wiadomości testowych ma swój szablon obecny w zbiorze
+treningowym, dlatego CV mierzy przede wszystkim rozpoznawanie **wariantów znanych
+szablonów**, a nie nowych kampanii ani rzeczywistych wiadomości. Wynik SMS równy
+1,0 wynika z trywialnej separowalności tych danych. Twierdzenie o skuteczności
+poza danymi syntetycznymi wymagałoby podziału grupowego według szablonu albo
+niezależnego, ręcznie oznaczonego zbioru rzeczywistych wiadomości.
 
-## 5.6. System wielowarstwowy — wkład warstw i latencja
+## 5.4. System wielowarstwowy — miara rozbieżności, wkład warstw, czas
 
-Na zbiorze 50 etykietowanych adresów (40 phishingowych z OpenPhish, 10 znanych
-legalnych) sam zespół ML osiągnął dokładność 0,96, a pełny agregator
-trójwarstwowy 0,92. Agregator zmienił dwie decyzje względem samego ML i **obie
-okazały się błędne** (prawdziwy phishing oznaczony jako legalny, w obu przypadkach
-z flagą rozbieżności). Przy domyślnych wagach (ML 0,5; reguły 0,3; Bayes 0,2)
-i prawdopodobnie źle skalibrowanym posteriorze Bayesa warstwy regułowa i
-bayesowska obniżają prawdopodobieństwo phishingu poniżej progu. W badanym zakresie
-integracja trzech warstw nie poprawiła decyzji względem samego ML.
+**Miara rozbieżności.** Wskaźnik rozbieżności to znormalizowana entropia Shannona
+rozkładu głosów, dzielona przez maksymalną entropię binarną log2(2) = 1 bit
+(`src/models/disagreement.py`, `src/paradigms/aggregation/disagreement.py`;
+17 testów jednostkowych). Dla trzech warstw każda niejednomyślność daje wynik
+≈ 0,918, a jednomyślność 0. Dla siedmiu klasyfikatorów najbardziej wyrównany
+podział 4/3 daje maksimum ≈ 0,985. Próg oznaczania przypadku granicznego ustawiono
+na 0,7: dla warstw oznacza to „paradygmaty nie są jednomyślne", a dla zespołu ML —
+„co najmniej dwa z siedmiu klasyfikatorów są odmiennego zdania". Flaga jest
+wskaźnikiem niezgody głosów, a nie dowodem, że dana decyzja jest błędna.
 
-**Miara rozbieżności (poprawiona).** Wskaźnik rozbieżności to znormalizowana
-entropia Shannona rozkładu głosów, dzielona przez maksymalną entropię binarną
-log2(2)=1. Dla trzech warstw każda niejednomyślność daje wynik ≈ 0,918, a
-jednomyślność 0. Dla siedmiu klasyfikatorów najbardziej wyrównany podział 4/3
-daje maksimum ≈ 0,985. Próg oznaczania przypadku granicznego ustawiono na 0,7:
-dla warstw oznacza to „paradygmaty nie są jednomyślne", a dla zespołu ML —
-„co najmniej dwa z siedmiu klasyfikatorów są odmiennego zdania".
+**Wkład warstw (próba ilustracyjna z nakładaniem danych).** Na zbiorze 50
+etykietowanych adresów (40 phishingowych z OpenPhish, 10 znanych legalnych) sam
+zespół ML osiągnął 48/50 poprawnych decyzji, a pełny agregator trójwarstwowy 46/50.
+Agregator zmienił dwie decyzje względem samego ML i obie okazały się błędne. Jest
+to jednak **próba ilustracyjna, nie niezależna ocena skuteczności**: pierwsze 40
+adresów pochodzi z tego samego pliku OpenPhish, z którego losowano dane treningowe
+URL — po odtworzeniu losowania 13 z 40 trafia do zbioru treningowego, a 4 do
+testowego. Dla rzetelnej oceny wkładu warstw potrzebna byłaby niezależna próba
+(z deduplikacją) z pełnym raportem zmian decyzji oraz błędów FN/FP. W badanym
+zakresie integracja trzech warstw nie poprawiła decyzji względem samego ML.
 
-**Latencja.** Pomiar `/predict/multi-paradigm` (50 żądań, model rozgrzany,
-cechy leksykalne, pomiar in-process): mediana 15 ms, 95. percentyl 16 ms —
-poniżej wymaganych 500 ms.
+**Czas odpowiedzi.** Pomiar `/predict/multi-paradigm` (50 żądań, model rozgrzany,
+cechy leksykalne, pomiar lokalny in-process przez TestClient): mediana ≈ 15 ms,
+95. percentyl ≈ 16 ms — poniżej wymaganych 500 ms. Zakres twierdzenia ograniczono
+do pojedynczego żądania po rozgrzaniu; nie obejmuje ono opóźnienia klient–serwer
+ani obciążenia równoległego.
 
----
 """
 
+CONCLUSION = """
+# 6. Podsumowanie
 
-def clean(text: str) -> str:
-    lines = text.splitlines()
+Zaprojektowano i wykonano system PhishGuard łączący ekstrakcję cech, siedem
+klasyfikatorów uczenia maszynowego, optymalizację hiperparametrów algorytmem
+genetycznym, system regułowy, klasyfikator bayesowski oraz warstwę agregacji z
+interfejsem API i demonstratorem. Wkład własny obejmuje integrację komponentów,
+dobór cech i mechanizm wykrywania rozbieżności między warstwami.
+
+Wyniki należy odczytywać w zakresie przeprowadzonych pomiarów. Na wspólnym,
+losowo podzielonym zbiorze testowym 50 adresów URL optymalizacja GA dała niewielką
+poprawę F1 (do +0,042 dla MLP), a zespoły klasyfikatorów nie przewyższyły
+najlepszego pojedynczego modelu zoptymalizowanego GA. Wyniki e-mail i SMS uzyskano
+na danych syntetycznych generowanych z ograniczonej liczby szablonów i nie mierzą
+one skuteczności na rzeczywistych wiadomościach. Na ilustracyjnej próbie 50 adresów
+agregator trójwarstwowy uzyskał 46/50 poprawnych decyzji wobec 48/50 dla samego
+zespołu ML; nie wykazano wzrostu skuteczności wynikającego z integracji warstw.
+Naprawiono natomiast główny mechanizm pracy: po poprawieniu normalizacji entropii
+flaga rozbieżności jest osiągalna i poprawnie sygnalizuje niezgodę głosów.
+Czas odpowiedzi pojedynczego żądania po rozgrzaniu modelu mieści się poniżej 500 ms
+w pomiarze lokalnym.
+
+System pokazuje wyniki trzech warstw oraz aktywne reguły, co zwiększa
+interpretowalność decyzji. Jest to cecha interfejsu, odrębna od zmierzonej
+skuteczności klasyfikacji. Dalsze prace, które pozwoliłyby rozszerzyć wnioski, to
+w szczególności: ewaluacja na niezależnych, rzeczywistych zbiorach wiadomości i
+adresów, podział grupowy danych syntetycznych według szablonu, zestawienie kosztu
+wyszukiwania GA z uzyskanym zyskiem oraz powtórzenia optymalizacji dla oceny jej
+stabilności. Zakres opcjonalny obejmuje porównanie z modelem głębokim oraz
+rozszerzenia OCR i wyjaśnień SHAP/LIME. Praca nie obejmowała bezpośredniego
+porównania z modelami głębokimi i nie formułuje wniosku o przewadze nad nimi.
+
+"""
+
+FIGURES = [
+    ("reports/figury2/diagram_architektura.png", "Rysunek A1. Architektura logiczna systemu PhishGuard (przycięty diagram, s. 25)."),
+    ("reports/figury2/zrzut-000.png", "Rysunek A2. Interfejs — zrzut ekranu (s. 48 oryginału)."),
+    ("reports/figury2/zrzut-001.png", "Rysunek A3. Interfejs — zrzut ekranu (s. 49 oryginału)."),
+    ("reports/figury2/zrzut-002.png", "Rysunek A4. Interfejs — zrzut ekranu (s. 50 oryginału)."),
+]
+
+
+def clean(lines):
     out = []
     for ln in lines:
         s = ln.rstrip()
-        # drop bare page numbers
         if re.fullmatch(r"\s*\d{1,3}\s*", s):
             continue
-        # collapse TOC dot leaders "Tytuł ....... 12" -> "Tytuł — 12"
         s = re.sub(r"\.{4,}\s*", " — ", s)
-        # drop body lines carrying stale Chapter-5 numbers (contradicted by the
-        # corrected Chapter 5); keep TOC lines (they have the " — <page>" leader)
         if " — " not in s and any(tok in s for tok in STALE_NUMBERS):
             continue
-        # U11 — drop garbled ASCII diagrams / spaced-out listings (clean versions
-        # live in Załącznik A as an image and in Załącznik B as source code).
         if any(ch in s for ch in "│┌┐└┘├┤┬┴┼"):
             continue
         toks = s.split()
@@ -175,68 +225,51 @@ def clean(text: str) -> str:
     return "\n".join(out)
 
 
-# Reliable inline text corrections (U6, U7) keyed on exact phrases.
-INLINE = [
-    (r"czterech\s+uzupełniających\s+się\s+podejść",
-     "trzech warstwach decyzyjnych (zespół ML, reguły, klasyfikator bayesowski) "
-     "z algorytmem genetycznym jako wcześniejszą optymalizacją modeli"),
-    (r"analizie\s+czterech\s+uzupełniających",
-     "analizie trzech uzupełniających"),
-    (r"\[Imię i Nazwisko Autora\]", AUTHOR),
-    (r"\[stopień\.\s*imię nazwisko promotora\]", PROMOTER),
-    # U7 — correct the Optuna description (default sampler is TPE, not a GP).
-    (r"Ma jednak wady\.\s*Modeluje funkcję jako proces gaussowski,\s*co przy\s*"
-     r"zmiennych kategorialnych wymaga sztucznych przekształceń\.\s*Poza tym może utykać w\s*"
-     r"lokalnych ekstremach\.",
-     "Domyślnym samplerem biblioteki Optuna jest TPE (Tree-structured Parzen "
-     "Estimator), a wariant oparty na procesie Gaussa stanowi osobną, opcjonalną "
-     "metodę. Optymalizacja bayesowska bywa wrażliwa na zmienne kategorialne i "
-     "dobór przestrzeni; w tym projekcie wartości kategorialne i tak mapowane są na "
-     "indeksy (src/optimization/search_spaces.py). Algorytm genetyczny wybrano ze "
-     "względu na naturalną obsługę mieszanych przestrzeni (całkowitych, ciągłych i "
-     "kategorialnych) bez sztucznych przekształceń oraz prostą kontrolę kosztu "
-     "obliczeń, a nie z powodu udowodnionej przewagi skuteczności nad optymalizacją "
-     "bayesowską."),
-    # U12 — fix the obvious table-numbering error.
-    (r"Tabela 0\.", "Tabela 1."),
-]
+def _slice(all_lines, a, b):
+    return all_lines[a - 1: (b if b else len(all_lines))]
 
 
 def main():
     if not SRC_TXT.exists():
-        print("Brak /tmp/praca_txt.txt — uruchom: pdftotext -layout praca-inzynierska.pdf /tmp/praca_txt.txt")
+        print("Brak /tmp/praca_txt.txt — uruchom pdftotext -layout najpierw.")
         return 1
-    body = clean(SRC_TXT.read_text(encoding="utf-8", errors="replace"))
+    L = SRC_TXT.read_text(encoding="utf-8", errors="replace").splitlines()
+
+    title = clean(_slice(L, *TITLE))
+    body = clean(_slice(L, *CH1_4))
+    bib = clean(_slice(L, *BIB))
     for pat, rep in INLINE:
-        body, n = re.subn(pat, rep, body, flags=re.IGNORECASE)
-    # Assemble: errata + rebuilt results + original body (as reference text)
-    md = (ERRATA + RESULTS +
-          "# Treść pracy (z ekstrakcji — do finalnego składu; rysunki do wstawienia)\n\n"
-          "> Uwaga: poniższy tekst pochodzi z automatycznej ekstrakcji PDF; pandoc\n"
-          "> zlewa złamane wiersze w akapity. Tabele i wyniki Rozdziału 5 zastąp\n"
-          "> wersjami z sekcji powyżej. Rysunki (zrzuty ekranu) wstaw ręcznie z\n"
-          "> oryginału — ekstrakcja tekstu ich nie zawiera.\n\n"
-          + body + "\n")
-    # Figures appendix (page renders — vector diagram + raster screenshots)
-    md += "\n\n# Załącznik A — rysunki (rendery stron oryginału)\n\n"
-    md += ("> Ekstrakcja tekstu nie zawiera grafiki, więc rysunki dołączono jako\n"
-           "> rendery odpowiednich stron PDF. Przy finalnym składzie zastąp je\n"
-           "> właściwymi, przyciętymi obrazami.\n\n")
+        title = re.sub(pat, rep, title)
+        body, _ = re.subn(pat, rep, body)
+
+    md = (title + "\n\n" + body + "\n\n" + RESULTS + "\n" + CONCLUSION + "\n"
+          + "# 7. Bibliografia\n\n" + bib + "\n")
+    # Appendix A — figures
+    md += "\n\n# Załącznik A — rysunki\n\n"
     for rel, cap in FIGURES:
         p = ROOT / rel
         if p.exists():
             md += f"![{cap}]({p})\n\n*{cap}*\n\n"
-    # U11 — czyste listingi z rzeczywistego kodu (zamiast zniekształconych z PDF)
-    md += "\n\n# Załącznik B — wybrane listingi kodu (czyste, z repozytorium)\n\n"
-    for path, title in [
+    # Appendix B — clean code listings
+    md += "\n\n# Załącznik B — wybrane listingi kodu\n\n"
+    for path, t in [
         ("src/paradigms/aggregation/disagreement.py", "Miara rozbieżności (poprawiona normalizacja)"),
         ("src/paradigms/aggregation/weights.py", "Wagi paradygmatów (ML 0,5 / reguły 0,3 / Bayes 0,2)"),
     ]:
         p = ROOT / path
         if p.exists():
-            code = p.read_text(encoding="utf-8")[:2200]
-            md += f"**{title}** (`{path}`):\n\n```python\n{code}\n```\n\n"
+            md += f"**{t}** (`{path}`):\n\n```python\n{p.read_text(encoding='utf-8')[:2200]}\n```\n\n"
     OUT_MD.write_text(md, encoding="utf-8")
+
+    ERRATA_MD.write_text(
+        "# Errata — wykaz poprawek (dla promotora, poza egzemplarzem pracy)\n\n"
+        "Scalono do jednego dokumentu: strona tytułowa, rozdz. 1-4, jeden rozdz. 5, "
+        "jedno zakończenie, bibliografia, załączniki. Usunięto stary rozdz. 5 i stare "
+        "wnioski. Poprawki merytoryczne: U1 (rozbieżność), U2/U3 (wspólny test URL), "
+        "U4 (e-mail/SMS: odłożony 20% syntetyczny + CV, przeciek szablonów), U9/U10 "
+        "(czas, wkład warstw z nakładaniem danych oznaczony jako ilustracyjny), "
+        "U6/U7 (trzy warstwy + GA, Optuna=TPE), K9 (forma bezosobowa).\n", encoding="utf-8")
+
     subprocess.run(["pandoc", str(OUT_MD), "-o", str(OUT_DOCX)], check=True)
     _apply_wszib_styles(OUT_DOCX)
     _apply_structure(OUT_DOCX)
@@ -244,78 +277,7 @@ def main():
     return 0
 
 
-def _field(run, instr, placeholder):
-    """Insert a Word field (e.g. PAGE, TOC) into a run."""
-    from docx.oxml.ns import qn
-    from docx.oxml import OxmlElement
-    b = OxmlElement("w:fldChar"); b.set(qn("w:fldCharType"), "begin")
-    it = OxmlElement("w:instrText"); it.set(qn("xml:space"), "preserve"); it.text = instr
-    sep = OxmlElement("w:fldChar"); sep.set(qn("w:fldCharType"), "separate")
-    t = OxmlElement("w:t"); t.text = placeholder
-    end = OxmlElement("w:fldChar"); end.set(qn("w:fldCharType"), "end")
-    for el in (b, it, sep, t, end):
-        run._r.append(el)
-
-
-def _apply_structure(path):
-    """Heading styles on body chapter/subchapter lines, an auto-updating TOC,
-    centered footer page numbers (title page without a number), and 10 pt bold
-    centered object captions — per the WSZiB standard."""
-    import re as _re
-    from docx import Document
-    from docx.shared import Pt
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    d = Document(str(path))
-
-    h1 = _re.compile(r"^\d+\.\s+\S")            # "1. Wstęp"
-    h2 = _re.compile(r"^\d+\.\d+\.?\s+\S")        # "2.1. ..."
-    h3 = _re.compile(r"^\d+\.\d+\.\d+\.?\s+\S")   # "2.1.1. ..."
-    cap = _re.compile(r"^(Rysunek|Tabela|Wykres|Schemat)\s+\d", _re.IGNORECASE)
-
-    for p in d.paragraphs:
-        txt = p.text.strip()
-        if not txt or len(txt) > 90:
-            continue
-        try:
-            if h3.match(txt):
-                p.style = d.styles["Heading 3"]
-            elif h2.match(txt):
-                p.style = d.styles["Heading 2"]
-            elif h1.match(txt):
-                p.style = d.styles["Heading 1"]
-            elif cap.match(txt):
-                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                for r in p.runs:
-                    r.font.size = Pt(10); r.font.bold = True
-        except KeyError:
-            pass
-
-    # Auto TOC at the very top
-    first = d.paragraphs[0]
-    toc_p = first.insert_paragraph_before("Spis treści")
-    toc_p.style = d.styles["Heading 1"]
-    toc_field_p = toc_p.insert_paragraph_before("")
-    # move the field paragraph to AFTER the heading
-    toc_p._p.addnext(toc_field_p._p)
-    _field(toc_field_p.add_run(), 'TOC \\o "1-3" \\h \\z \\u',
-           "Spis treści — kliknij i naciśnij F9, aby zaktualizować")
-
-    # Footer page numbers, centered; first page (title) without a number
-    for sec in d.sections:
-        sec.different_first_page_header_footer = True
-        f = sec.footer
-        fp = f.paragraphs[0] if f.paragraphs else f.add_paragraph()
-        fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        _field(fp.add_run(), "PAGE", "1")
-        # ensure first-page footer stays empty
-        sec.first_page_footer.is_linked_to_previous = False
-
-    d.save(str(path))
-
-
 def _apply_wszib_styles(path):
-    """Apply the WSZiB editorial standard: Times New Roman 12 pt, 1.5 line
-    spacing, justified body, 2.5 cm margins, bold headings 16/14 pt, left."""
     from docx import Document
     from docx.shared import Pt, Cm
     from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -333,6 +295,61 @@ def _apply_wszib_styles(path):
             st.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
         except KeyError:
             pass
+    d.save(str(path))
+
+
+def _field(run, instr, placeholder):
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+    b = OxmlElement("w:fldChar"); b.set(qn("w:fldCharType"), "begin")
+    it = OxmlElement("w:instrText"); it.set(qn("xml:space"), "preserve"); it.text = instr
+    sep = OxmlElement("w:fldChar"); sep.set(qn("w:fldCharType"), "separate")
+    t = OxmlElement("w:t"); t.text = placeholder
+    end = OxmlElement("w:fldChar"); end.set(qn("w:fldCharType"), "end")
+    for el in (b, it, sep, t, end):
+        run._r.append(el)
+
+
+def _apply_structure(path):
+    from docx import Document
+    from docx.shared import Pt
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    d = Document(str(path))
+    h1 = re.compile(r"^\d+\.\s+\S")
+    h2 = re.compile(r"^\d+\.\d+\.?\s+\S")
+    h3 = re.compile(r"^\d+\.\d+\.\d+\.?\s+\S")
+    cap = re.compile(r"^(Rysunek|Tabela|Wykres|Schemat)\s+\d", re.IGNORECASE)
+    for p in d.paragraphs:
+        txt = p.text.strip()
+        if not txt or len(txt) > 90:
+            continue
+        try:
+            if h3.match(txt):
+                p.style = d.styles["Heading 3"]
+            elif h2.match(txt):
+                p.style = d.styles["Heading 2"]
+            elif h1.match(txt):
+                p.style = d.styles["Heading 1"]
+            elif cap.match(txt):
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for r in p.runs:
+                    r.font.size = Pt(10); r.font.bold = True
+        except KeyError:
+            pass
+    first = d.paragraphs[0]
+    toc_p = first.insert_paragraph_before("Spis treści")
+    toc_p.style = d.styles["Heading 1"]
+    toc_field_p = toc_p.insert_paragraph_before("")
+    toc_p._p.addnext(toc_field_p._p)
+    _field(toc_field_p.add_run(), 'TOC \\o "1-3" \\h \\z \\u',
+           "Spis treści — kliknij i naciśnij F9, aby zaktualizować")
+    for sec in d.sections:
+        sec.different_first_page_header_footer = True
+        f = sec.footer
+        fp = f.paragraphs[0] if f.paragraphs else f.add_paragraph()
+        fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        _field(fp.add_run(), "PAGE", "1")
+        sec.first_page_footer.is_linked_to_previous = False
     d.save(str(path))
 
 

@@ -1,326 +1,3 @@
-# Wykaz poprawek (errata) — wersja poprawiona
-
-**Autor:** Łukasz Drążek  **Promotor:** dr hab. inż. Rafał Dreżewski
-
-Niniejsza wersja nanosi poprawki wynikające z recenzji. Kluczowe zmiany
-merytoryczne (zweryfikowane w kodzie i udokumentowane skryptami w `scripts/`
-oraz raportami w `reports/`):
-
-- **U1 — miara rozbieżności.** Naprawiono normalizację entropii: dzielenie przez
-  log2(2)=1 (liczba klas), nie przez log2(liczby głosujących). Próg 0,7 jest
-  teraz osiągalny i `is_edge_case` działa. Skrypt: `src/*/disagreement.py`,
-  testy: `tests/test_disagreement.py`.
-- **U2/U3 — wyniki URL.** Wszystkie warianty oceniono na jednym wspólnym
-  odłożonym teście (`scripts/evaluate_url_models_honest.py`,
-  `reports/url_eval_honest.csv`). Rozdzielono F1 testowe od CV-fitness.
-- **U4 — e-mail/SMS.** Liczby pochodzą z 5-krotnej CV na danych syntetycznych
-  (`scripts/evaluate_email_sms_honest.py`), nie z metadanych modeli.
-- **U9/U10 — latencja i warstwy.** Latencja jako rozkład (mediana 15 ms, p95
-  16 ms); wkład warstw zmierzony — agregator nie poprawił decyzji względem
-  samego ML (`scripts/evaluate_latency_and_layers.py`).
-- **U6** — ujednolicono: trzy warstwy decyzyjne (ML, reguły, Bayes) + GA jako
-  wcześniejsza optymalizacja (nie „cztery podejścia").
-- **U7** — poprawiono opis Optuny (domyślny sampler TPE, nie proces Gaussa).
-- **U5/U8/U11/U12** — okładka, zakres demonstratora, listingi, numeracja.
-
----
-
-
-# Rozdział 5 — Wyniki (wersja poprawiona)
-
-> Wszystkie wyniki URL pochodzą z jednego protokołu: wspólny odłożony zbiór
-> testowy z artefaktu `cache/url_training_data.joblib` (200 train / 50 test,
-> 25/25, 30 cech), podział **losowy stratyfikowany** (`random_state=42`) —
-> **nie temporalny**. Skrypt: `scripts/evaluate_url_models_honest.py`, raport:
-> `reports/url_eval_honest.csv`. Mały zbiór testowy (50 próbek) oznacza, że
-> różnice są orientacyjne.
-
-## 5.2–5.3. Klasyfikatory: baza vs GA na tym samym teście
-
-| Klasyfikator | F1 baza (test) | F1 GA (test) | Zysk (test) | CV-fitness (osobno) |
-|---|---|---|---|---|
-| Logistic Regression | 0,9200 | 0,9362 | +0,0162 | 0,9749 |
-| Random Forest | 0,9091 | 0,9259 | +0,0168 | 0,9705 |
-| MLP | 0,9167 | 0,9583 | +0,0417 | 0,9697 |
-| XGBoost | 0,9231 | 0,9259 | +0,0028 | 0,9623 |
-| SVM (RBF) | 0,8846 | 0,9020 | +0,0173 | 0,9502 |
-| Naive Bayes | 0,9020 | 0,9020 | +0,0000 | 0,9438 |
-| Decision Tree | 0,8980 | 0,9259 | +0,0280 | 0,9656 |
-
-Na wspólnym teście optymalizacja GA daje niewielką poprawę F1 (od +0,000 dla
-Naive Bayes do +0,042 dla MLP). Kolumna „CV-fitness" to F1 z 5-krotnej walidacji
-krzyżowej najlepszego osobnika i jest **inną wielkością** niż wynik testowy;
-wcześniej raportowane większe „zyski" wynikały z odejmowania tych dwóch wielkości
-i nie są poprawnym oszacowaniem poprawy na teście.
-
-## 5.4. Zespoły (ten sam test)
-
-| Wariant | F1 (test) |
-|---|---|
-| Hard voting | 0,9200 |
-| Soft voting | 0,9231 |
-| Stacking | 0,9231 |
-| **Najlepszy pojedynczy (MLP-GA)** | **0,9583** |
-
-Na wspólnym zbiorze testowym zespoły osiągają F1 ≈ 0,92 i **nie przewyższają**
-najlepszego pojedynczego modelu zoptymalizowanego GA (MLP, 0,958). Wynik nie
-potwierdza przewagi zespołów i tak jest opisany.
-
-## 5.5. Modele wyspecjalizowane (e-mail, SMS) — dane syntetyczne
-
-| Typ | 5-fold CV acc | 5-fold CV F1 |
-|---|---|---|
-| E-mail (65 cech) | 0,985 | 0,984 |
-| SMS (70 cech) | 1,000 | 1,000 |
-
-Wartości pochodzą z 5-krotnej stratyfikowanej walidacji krzyżowej na zbiorze
-**syntetycznym** (200 próbek/typ; `scripts/evaluate_email_sms_honest.py`).
-Zapisane w modelach `test_accuracy=1,0` to wynik na danych treningowych
-(memoryzacja), nie miara generalizacji. Wynik SMS równy 1,0 wynika z trywialnej
-separowalności danych syntetycznych. Żaden z tych wyników nie mierzy skuteczności
-na rzeczywistych wiadomościach.
-
-## 5.6. System wielowarstwowy — wkład warstw i latencja
-
-Na zbiorze 50 etykietowanych adresów (40 phishingowych z OpenPhish, 10 znanych
-legalnych) sam zespół ML osiągnął dokładność 0,96, a pełny agregator
-trójwarstwowy 0,92. Agregator zmienił dwie decyzje względem samego ML i **obie
-okazały się błędne** (prawdziwy phishing oznaczony jako legalny, w obu przypadkach
-z flagą rozbieżności). Przy domyślnych wagach (ML 0,5; reguły 0,3; Bayes 0,2)
-i prawdopodobnie źle skalibrowanym posteriorze Bayesa warstwy regułowa i
-bayesowska obniżają prawdopodobieństwo phishingu poniżej progu. W badanym zakresie
-integracja trzech warstw nie poprawiła decyzji względem samego ML.
-
-**Miara rozbieżności (poprawiona).** Wskaźnik rozbieżności to znormalizowana
-entropia Shannona rozkładu głosów, dzielona przez maksymalną entropię binarną
-log2(2)=1. Dla trzech warstw każda niejednomyślność daje wynik ≈ 0,918, a
-jednomyślność 0. Dla siedmiu klasyfikatorów najbardziej wyrównany podział 4/3
-daje maksimum ≈ 0,985. Próg oznaczania przypadku granicznego ustawiono na 0,7:
-dla warstw oznacza to „paradygmaty nie są jednomyślne", a dla zespołu ML —
-„co najmniej dwa z siedmiu klasyfikatorów są odmiennego zdania".
-
-**Latencja.** Pomiar `/predict/multi-paradigm` (50 żądań, model rozgrzany,
-cechy leksykalne, pomiar in-process): mediana 15 ms, 95. percentyl 16 ms —
-poniżej wymaganych 500 ms.
-
----
-# Treść pracy (z ekstrakcji — do finalnego składu; rysunki do wstawienia)
-
-> Uwaga: poniższy tekst pochodzi z automatycznej ekstrakcji PDF; pandoc
-> zlewa złamane wiersze w akapity. Tabele i wyniki Rozdziału 5 zastąp
-> wersjami z sekcji powyżej. Rysunki (zrzuty ekranu) wstaw ręcznie z
-> oryginału — ekstrakcja tekstu ich nie zawiera.
-
-Table of Contents
-Spis treści  — 8
-
-1. Wstęp  — 11
-
-2. Cel prac i wizja produktu  — 13
-
-   2.1. Charakterystyka problemu i motywacja  — 13
-
-   2.2. Przegląd istniejących rozwiązań  — 14
-
-       2.2.1. Mechanizmy reputacyjne  — 14
-
-       2.2.2. Komercyjne filtry treści  — 14
-
-       2.2.3. Wtyczki przeglądarek i specjalistyczne dodatki  — 15
-
-       2.2.4. Akademickie projekty open-source  — 15
-
-       2.2.5. Tabela porównawcza  — 16
-
-       2.2.6. Luka, którą wypełnia praca  — 17
-
-   2.3. Wizja systemu PhishGuard  — 17
-
-   2.4. Studium wykonalności i analiza zagrożeń  — 18
-
-       2.4.1. Wykonalność techniczna  — 18
-
-       2.4.2. Wykonalność czasowa  — 18
-
-       2.4.3. Analiza zagrożeń  — 19
-
-       2.4.4. Wykonalność ekonomiczna  — 19
-
-       2.4.5. Bilans  — 19
-
-3. Zakres funkcjonalności  — 21
-
-   3.1. Aktorzy i konteksty użycia  — 21
-
-   3.2. Wymagania funkcjonalne  — 21
-
-       Wejścia (INPUT) — 22
-
-       Ekstrakcja cech (FEAT)  — 22
-
-       Klasyfikatory ML (ML)  — 22
-
-
-      Zespoły (ENS)  — 22
-
-      Algorytm genetyczny (GA)  — 23
-
-      System regułowy (RULE)  — 23
-
-      System probabilistyczny (PROB)  — 23
-
-      Agregacja (AGG)  — 23
-
-   3.3. Wymagania niefunkcjonalne  — 23
-
-   3.4. Komponenty współpracujące  — 24
-
-4. Wybrane aspekty realizacji  — 25
-
-   4.1. Architektura systemu — 25
-
-   4.2. Pipeline danych i ekstrakcja cech  — 26
-
-      Cechy URL  — 27
-
-      Cechy e-mail i SMS  — 28
-
-      Cechy tekstowe  — 28
-
-   4.3. Warstwa uczenia maszynowego  — 28
-
-      4.3.1. Random Forest  — 29
-
-      4.3.2. Support Vector Machine  — 30
-
-      4.3.3. Multi-Layer Perceptron  — 30
-
-      4.3.4. Gradient Boosting (XGBoost)  — 31
-
-      4.3.5. Logistic Regression  — 31
-
-      4.3.6. Gaussian Naive Bayes  — 32
-
-      4.3.7. Decision Tree  — 33
-
-      4.3.8. Zespoły klasyfikatorów  — 33
-
-      4.3.9. Wykrywanie rozbieżności w zespole  — 34
-
-   4.4. Optymalizacja ewolucyjna (algorytm genetyczny)  — 34
-
-      4.4.1. Motywacja i krótki rys historyczny  — 34
-
-
-
-   4.4.2. Implementacja na bazie DEAP  — 35
-
-   Reprezentacja osobnika  — 36
-
-   Operatory genetyczne  — 36
-
-   Funkcja celu  — 37
-
-   Pętla ewolucyjna  — 37
-
-   Wersjonowanie modeli  — 37
-
-4.5. System regułowy  — 38
-
-   Struktura reguły  — 38
-
-   Algorytm ewaluacji  — 39
-
-4.6. System probabilistyczny (klasyfikator bayesowski)  — 40
-
-   4.6.1. Twierdzenie Bayesa i jego zastosowanie do klasyfikacji  — 40
-
-   4.6.2. Wariant Gaussowski i kalibracja  — 41
-
-   4.6.3. Implementacja w projekcie  — 42
-
-4.7. Agregacja wielo-paradygmatowa  — 43
-
-   Wkład poszczególnych warstw  — 43
-
-   Wykrywanie rozbieżności między warstwami decyzyjnymi  — 43
-
-   Generowanie wyjaśnienia — 44
-
-4.8. API REST i aplikacja serwerowa  — 44
-
-   Inicjalizacja modeli  — 44
-
-   Endpointy  — 45
-
-   Walidacja danych wejściowych  — 46
-
-   Obsługa błędów  — 46
-
-   Wybór def vs async def  — 46
-
-4.9. Aplikacja webowa demonstratora  — 47
-
-   4.9.1. Wybór technologii  — 47
-
-
-
-       4.9.2. Schemat działania  — 47
-
-       4.9.3. Komunikacja z API  — 51
-
-   4.10. Testy automatyczne i zapewnienie jakości  — 51
-
-5. Wyniki projektu — 53
-
-   5.1. Metodyka ewaluacji  — 53
-
-   5.2. Wyniki klasyfikatorów bazowych  — 53
-
-   5.3. Wyniki klasyfikatorów zoptymalizowanych  — 54
-
-       5.3.1. Hiperparametry znalezione przez algorytm genetyczny  — 56
-
-   5.4. Wyniki zespołów (ensembles)  — 57
-
-   5.5. Wyniki modeli wyspecjalizowanych (e-mail, SMS) — 57
-
-   5.6. Wyniki systemu wielowarstwowego  — 58
-
-   5.7. Studium przypadków — 59
-
-       5.7.1. Przypadek jednomyślny phishing — 59
-
-       5.7.2. Przypadek jednomyślny legalny — 59
-
-       5.7.3. Próbka z adresem IP w prywatnym zakresie  — 60
-
-       5.7.4. Phishing wykrywany głównie przez reguły  — 60
-
-       5.7.5. Próbka SMS — 61
-
-   5.8. Ograniczenia — 62
-
-6. Podsumowanie  — 63
-
-       Najważniejsze trudności projektowe  — 64
-
-   Propozycje dalszych prac  — 65
-
-7. Bibliografia — 67
-
-8. Wykaz tabel, rysunków i listingów  — 71
-
-   Tabele  — 71
-
-   Rysunki — 71
-
-
-
-Listingi  — 71
-
-
-
                 WYŻSZA SZKOŁA ZARZĄDZANIA I BANKOWOŚCI
 
                                                        W KRAKOWIE
@@ -370,83 +47,6 @@ dr hab. inż. Rafał Dreżewski
 
 
 
-Spis treści
-  1. Wstęp
-  2. Cel prac i wizja produktu
-         o 2.1. Charakterystyka problemu i motywacja
-         o 2.2. Przegląd istniejących rozwiązań
-                ▪   2.2.1. Mechanizmy reputacyjne
-                ▪   2.2.2. Komercyjne filtry treści
-                ▪   2.2.3. Wtyczki przeglądarek i specjalistyczne dodatki
-                ▪   2.2.4. Akademickie projekty open-source
-                ▪   2.2.5. Tabela porównawcza
-                ▪   2.2.6. Luka, którą wypełnia praca
-         o 2.3. Wizja systemu PhishGuard
-         o 2.4. Studium wykonalności i analiza zagrożeń
-                ▪   2.4.1. Wykonalność techniczna
-                ▪   2.4.2. Wykonalność czasowa
-                ▪   2.4.3. Analiza zagrożeń
-                ▪   2.4.4. Wykonalność ekonomiczna
-                ▪   2.4.5. Bilans
-  3. Zakres funkcjonalności
-         o 3.1. Aktorzy i konteksty użycia
-         o 3.2. Wymagania funkcjonalne
-         o 3.3. Wymagania niefunkcjonalne
-         o 3.4. Komponenty współpracujące
-  4. Wybrane aspekty realizacji
-         o 4.1. Architektura systemu
-         o 4.2. Pipeline danych i ekstrakcja cech
-         o 4.3. Warstwa uczenia maszynowego
-                ▪   4.3.1. Random Forest
-
-
-             ▪   4.3.2. Support Vector Machine
-             ▪   4.3.3. Multi-Layer Perceptron
-             ▪   4.3.4. Gradient Boosting (XGBoost)
-             ▪   4.3.5. Logistic Regression
-             ▪   4.3.6. Gaussian Naive Bayes
-             ▪   4.3.7. Decision Tree
-             ▪   4.3.8. Zespoły klasyfikatorów
-             ▪   4.3.9. Wykrywanie rozbieżności w zespole
-      o 4.4. Optymalizacja ewolucyjna (algorytm genetyczny)
-             ▪   4.4.1. Motywacja i krótki rys historyczny
-             ▪   4.4.2. Implementacja na bazie DEAP
-      o 4.5. System regułowy
-      o 4.6. System probabilistyczny (klasyfikator bayesowski)
-             ▪   4.6.1. Twierdzenie Bayesa i jego zastosowanie do klasyfikacji
-             ▪   4.6.2. Wariant Gaussowski i kalibracja
-             ▪   4.6.3. Implementacja w projekcie
-      o 4.7. Agregacja wielo-paradygmatowa
-      o 4.8. API REST i aplikacja serwerowa
-      o 4.9. Aplikacja webowa demonstratora
-             ▪   4.9.1. Wybór technologii
-             ▪   4.9.2. Schemat działania
-             ▪   4.9.3. Komunikacja z API
-      o 4.10. Testy automatyczne i zapewnienie jakości
-5. Wyniki projektu
-      o 5.1. Metodyka ewaluacji
-      o 5.2. Wyniki klasyfikatorów bazowych
-      o 5.3. Wyniki klasyfikatorów zoptymalizowanych
-             ▪   5.3.1. Hiperparametry znalezione przez algorytm genetyczny
-      o 5.4. Wyniki zespołów (ensembles)
-
-
-       o 5.5. Wyniki modeli wyspecjalizowanych (e-mail, SMS)
-       o 5.6. Wyniki systemu wielowarstwowego
-       o 5.7. Studium przypadków
-              ▪   5.7.1. Przypadek jednomyślny phishing
-              ▪   5.7.2. Przypadek jednomyślny legalny
-              ▪   5.7.3. Próbka z adresem IP w prywatnym zakresie
-              ▪   5.7.4. Phishing wykrywany głównie przez reguły
-              ▪   5.7.5. Próbka SMS
-       o 5.8. Ograniczenia
-6. Podsumowanie
-7. Bibliografia
-8. Wykaz tabel, rysunków i listingów
-
-
-
-
 
 1. Wstęp
 
@@ -469,8 +69,7 @@ była prawdziwa. Stąd pytanie, które stało za projektem: czy da się zbudowa�
 oceni taki komunikat samodzielnie, w sposób na tyle przejrzysty, by zwykły użytkownik widział,
 dlaczego system się niepokoi.
 
-Postanowiłem zaprojektować i wykonać system wykrywania phishingu, w którym wynik
-klasyfikacji opiera się nie na jednym modelu, ale na połączonej analizie trzech warstwach decyzyjnych (zespół ML, reguły, klasyfikator bayesowski) z algorytmem genetycznym jako wcześniejszą optymalizacją modeli: uczenia maszynowego, algorytmu ewolucyjnego, systemu regułowego i
+Zaprojektowano i wykonano system wykrywania phishingu, w którym wynik klasyfikacji opiera się nie na jednym modelu, lecz na trzech warstwach decyzyjnych działających podczas predykcji: zespole uczenia maszynowego, systemie regułowym i klasyfikatorze bayesowskim. Algorytm genetyczny pełni rolę wcześniejszej optymalizacji modeli, a nie czwartej warstwy głosującej. Trzy warstwy predykcji łączą: uczenie maszynowe, system regułowy i podejście
 probabilistycznego modelu bayesowskiego. Hipoteza pracy brzmi tak: rozbieżność wskazań
 między tymi metodami sama w sobie jest sygnałem diagnostycznym. Pozwala wychwycić
 przypadki graniczne, w których pojedyncze podejście mogłoby się mocno pomylić.
@@ -1065,7 +664,7 @@ starcie API).
 
 4.3. Warstwa uczenia maszynowego
 
-Do projektu wybrałem siedem klasyfikatorów z różnych rodzin algorytmów uczenia
+Do projektu wybrano siedem klasyfikatorów z różnych rodzin algorytmów uczenia
 nadzorowanego. Każdy z nich przyjmuje inne założenia o rozkładzie danych i inaczej reaguje na
 zależności między cechami. To nie jest przypadek - taka mieszanka heterogeniczna daje w
 zespole zysk większy niż prosta suma składowych, co dobrze tłumaczy klasyczna analiza bias-
@@ -1293,7 +892,7 @@ blisko 100 tysięcy treningów. Wyszukiwanie losowe (random search) jest istotni
 efektywne, ponieważ większość wymiarów ma niski wpływ i przeszukiwanie ich z siatkowym
 krokiem jest marnotrawne [40]. Jeszcze efektywniejsza jest optymalizacja bayesowska (na
 przykład Optuna), która modeluje funkcję celu zastępczo i dobiera kolejne próbki na podstawie
-modelu zastępczego. Domyślnym samplerem biblioteki Optuna jest TPE (Tree-structured Parzen Estimator), a wariant oparty na procesie Gaussa stanowi osobną, opcjonalną metodę. Optymalizacja bayesowska bywa wrażliwa na zmienne kategorialne i dobór przestrzeni; w tym projekcie wartości kategorialne i tak mapowane są na indeksy (src/optimization/search_spaces.py). Algorytm genetyczny wybrano ze względu na naturalną obsługę mieszanych przestrzeni (całkowitych, ciągłych i kategorialnych) bez sztucznych przekształceń oraz prostą kontrolę kosztu obliczeń, a nie z powodu udowodnionej przewagi skuteczności nad optymalizacją bayesowską.
+modelu zastępczego. Domyślnym samplerem biblioteki Optuna jest TPE (Tree-structured Parzen Estimator), a wariant oparty na procesie Gaussa stanowi osobną, opcjonalną metodę. Optymalizacja bayesowska bywa jednak wrażliwa na zmienne kategorialne i dobór przestrzeni; w tym projekcie wartości kategorialne i tak mapowane są na indeksy (src/optimization/search_spaces.py). Algorytm genetyczny wybrano ze względu na naturalną obsługę mieszanych przestrzeni oraz prostą kontrolę kosztu obliczeń, a nie z powodu udowodnionej przewagi nad optymalizacją bayesowską.
 
 Algorytmy genetyczne, sformułowane przez Johna Hollanda w latach siedemdziesiątych [34] i
 rozwijane jako odrębna gałąź obliczeń ewolucyjnych [18], przyjmują inną drogę. Przeszukują
@@ -1307,7 +906,7 @@ algorytmu (wielkość populacji, prawdopodobieństwa krzyżowania i mutacji).
 
 4.4.2. Implementacja na bazie DEAP
 
-Optymalizację zrealizowałem w bibliotece DEAP (Fortin i in. [7], Distributed Evolutionary
+Optymalizację zrealizowano w bibliotece DEAP (Fortin i in. [7], Distributed Evolutionary
 Algorithms in Python, wersja 1.4.3). DEAP udostępnia gotowe operatory selekcji, krzyżowania i
 mutacji, łatwo integruje się ze scikit-learn i pozwala też sięgnąć po bardziej zaawansowane
 warianty obliczeń ewolucyjnych (NSGA-II, CMA-ES, programowanie genetyczne), gdyby
@@ -1866,518 +1465,138 @@ demonstratora.
 
 
 
-5. Wyniki projektu
 
-5.1. Metodyka ewaluacji
 
-Ewaluacja systemu została przeprowadzona w oparciu o metodologię standardową w literaturze
-wykrywania phishingu, z dwoma uzupełniającymi wymaganiami specyficznymi dla projektu:
-
-   1. Temporalny rozdział train/test (temporal_split.py) - próbki treningowe pochodzą z
-       okresu poprzedzającego próbki testowe, co odzwierciedla realny scenariusz wdrożeniowy
-       (model uczy się na danych historycznych, predykuje na nowych).
-   2. 5-krotna stratifikowana walidacja krzyżowa - stosowana wewnątrz funkcji celu
-       algorytmu genetycznego oraz w treningu meta-modelu stacking.
-
-Miary ewaluacyjne:
-
-   •   Accuracy - udział poprawnie sklasyfikowanych próbek;
-   •   Precision - udział faktycznych próbek phishingowych wśród sklasyfikowanych jako
-       phishing;
-   •   Recall - udział wykrytych próbek phishingowych wśród wszystkich faktycznych
-       phishingowych;
-   •   F1-score - średnia harmoniczna precyzji i czułości;
-   •   AUC-ROC - pole pod krzywą ROC;
-   •   Confusion matrix - macierz pomyłek (true positive, false positive, true negative, false
-       negative).
-
-Dla wszystkich modeli zoptymalizowanych algorytmem genetycznym zachowywany jest plik
-metadanych (models/optimized/*_metadata.json) zawierający parametry, F1-score testowy oraz
-datę treningu.
-
-
-5.2. Wyniki klasyfikatorów bazowych
-
-Klasyfikatory      bazowe   wytrenowano     z    domyślnymi   hiperparametrami     scikit-learn
-(modyfikowanymi jedynie ze względu na zbalansowanie klas: class_weight='balanced' lub
-
-
-odpowiednik dla XGBoost). Wyniki bazowe (Tabela 4) stanowią punkt odniesienia dla
-optymalizacji - dla bezpośredniego, twardego porównania zalecane jest uruchomienie modułu
-ewaluacji w sklonowanym repozytorium (python -m src.models.evaluate --classifier
-<nazwa>), który zapisuje pełny raport JSON w reports/.
-
-
-Klasyfikator              Accuracy Precision        Recall        F1        AUC
-
-Random Forest                0,9622     0,9583 0,9612 0,9597 0,9854
-
-SVM (RBF)                    0,9407     0,9356 0,9381 0,9368 0,9714
-
-
-XGBoost                      0,9651     0,9613 0,9628 0,9620 0,9869
-
-Logistic Regression          0,9244     0,9202 0,9226 0,9214 0,9612
-
-Naive Bayes (Gaussian)       0,8784     0,8682 0,8732 0,8753 0,9304
-
-Decision Tree                0,9183     0,9128 0,9152 0,9140 0,9251
-
-Tabela 4. Wyniki klasyfikatorów bazowych (cechy URL, zbiór testowy temporalny). Wartości
-orientacyjne,   do    potwierdzenia   uruchomieniem      python        -m   src.models.evaluate   na
-sklonowanym repozytorium.
-
-Wartości w tabeli odpowiadają typowym wynikom obserwowanym w trakcie wykonywania
-testów integracyjnych i są reprezentatywne dla rzędu wielkości metryk. Najlepszą skuteczność
-uzyskują klasyfikatory drzewiaste (XGBoost, Random Forest), najsłabszą - Naive Bayes oraz
-Decision Tree. Wynik NB ma znaczenie dla warstwy probabilistycznej: niski F1 nie
-dyskwalifikuje modelu jako sygnału ortogonalnego do pozostałych w agregacji. Wartości w
-kolumnie "F1 po GA" w następnej sekcji są natomiast pobierane bezpośrednio z plików
-models/optimized/{nazwa}_metadata.json zapisanych przez optymalizator i stanowią twarde
-
-dane wynikowe.
-
-
-5.3. Wyniki klasyfikatorów zoptymalizowanych
-
-Po zastosowaniu algorytmu genetycznego (populacja 50, 30 generacji, F1 jako fitness)
-klasyfikatory osiągają konsekwentny wzrost skuteczności. Wartości w kolumnie "F1 po GA"
-pochodzą bezpośrednio z plików metadanych zapisywanych po każdym biegu optymalizacji
-
-
-(models/optimized/{nazwa}_metadata.json); klucz fitness zawiera wynik F1 z 5-krotnej
-stratifikowanej walidacji krzyżowej dla najlepszego osobnika populacji.
-
-Klasyfikator          F1 bazowy (orient.) F1 po GA        Zysk
-
-
-Random Forest                     0,9597      0,9705 +0,0108
-
-MLP                               0,9476      0,9697 +0,0221
-
-Decision Tree                     0,9140      0,9656 +0,0516
-
-XGBoost                           0,9620      0,9623 +0,0003
-
-SVM (RBF)                         0,9368      0,9502 +0,0134
-
-
-Tabela 5. Porównanie F1-score klasyfikatorów bazowych i zoptymalizowanych GA (wartości "F1
-po GA" - z plików models/optimized/*_metadata.json ).
-
-Średnie F1 dla siedmiu zoptymalizowanych klasyfikatorów wynosi 0,9624, co jest zgodne z
-deklaracją w pliku README.md repozytorium ("avg F1 ~0.96"). Największe zyski dotyczą dwóch
-wartość C ~7,97). Trafienie tych wartości metodą siatkową byłoby trudne, bo wrażliwość jest
-logarytmiczna; algorytm genetyczny radzi sobie z tym dzięki operatorowi cxBlend, który nie
-wymaga jawnego mapowania skali. Pozostałe modele zyskują znacznie mniej, w granicach od
-+0,0003 do +0,02 F1 - są albo dobrze dopasowane już w wersji bazowej (XGBoost), albo mają
-mało dominujący hiperparametr (RF, SVM, DT, MLP).
-
-Wynik XGBoost (+0,0003) jest tu graniczny. Klasyfikator ten ma dziewięć istotnych
-hiperparametrów i przy populacji 50 osobników oraz 30 generacjach pokrycie przestrzeni jest
-niepełne. Jakość bazowa jest jednak już bardzo wysoka, więc dalsza poprawa wymagałaby
-zwiększenia budżetu obliczeniowego albo połączenia GA z optymalizacją bayesowską jako fazą
-dostrajania.
-
-
-
-
-
-Historia ewolucji zapisywana w MLflow pokazuje typową krzywą fitness w kształcie krzywej
-logarytmicznej: szybki wzrost w pierwszych 10 generacjach, stabilizacja w okolicach 20-25
-generacji.
-
-5.3.1. Hiperparametry znalezione przez algorytm genetyczny
-
-Konkretne wartości najlepszych osobników (zapisane w models/optimized/*_metadata.json)
-zostały zaprezentowane w Tabeli 5b. Dostarczają one wymiernego wglądu w "kierunek
-poszukiwań" algorytmu: GA wybiera modele o wyraźnej regularyzacji (umiarkowane
-głębokości drzew, niewielkie sieci MLP, ograniczone min_child_weight w XGBoost), co jest
-zgodne z intuicją - zbiór cech URL jest niskowymiarowy (30 cech) i przeuczenie jest realnym
-ryzykiem.
-
-                                                                                        F1 (5-
-Klasyfikator    Najlepsze hiperparametry (z *_metadata.json)                          fold CV)
-
-Logistic        C=7.97, penalty=l2                                                     0,9749
-Regression
-
-Random          n_estimators=165,         max_depth=28,        min_samples_split=2,    0,9705
-Forest          min_samples_leaf=1
-
-MLP             hidden_layer_sizes=(50,),                          alpha=8,06·10⁻³,    0,9697
-                learning_rate_init=9,69·10⁻³
-
-Decision Tree   max_depth=6,         min_samples_split=4,       min_samples_leaf=1,    0,9656
-                criterion=gini
-
-XGBoost         n_estimators=175,          max_depth=7,        learning_rate=0,108,    0,9623
-                subsample=0,867,         colsample_bytree=0,666,        gamma=2,14,
-
-                min_child_weight=2, reg_alpha=0,490, reg_lambda=0,234
-
-SVM (RBF)       C=1,22, gamma=0,0898, kernel=rbf                                       0,9502
-
-Naive Bayes     var_smoothing=4,43·10⁻¹¹                                               0,9438
-
-Tabela 5b. Najlepsze hiperparametry znalezione przez algorytm genetyczny dla każdego
-klasyfikatora oraz odpowiadające im wyniki F1 (5-krotna walidacja krzyżowa). Wartości
-
-
-
-
-pobrano bezpośrednio z plików models/optimized/{nazwa}_metadata.json zapisanych podczas
-treningu (znacznik czasu: 11 lutego 2026).
-
-
-5.4. Wyniki zespołów (ensembles)
-
-Zespoły siedmiu klasyfikatorów uzyskują wyraźnie lepszą skuteczność niż pojedyncze modele:
-
-Wariant zespołu            Accuracy Precision          Recall    F1
-
-
-
-
-
-Tabela 6. Wyniki zespołów klasyfikatorów na zbiorze testowym temporalnym.
-
-Najwyższą skuteczność uzyskuje ważone głosowanie po optymalizacji wag algorytmem
-genetycznym (faza GA-04, model w models/optimized/ensemble/weighted_voting.joblib).
-
-Pełny komplet czterech wariantów zespołu (hard voting, soft voting, stacking, weighted voting)
-pochodzi z pełnego repozytorium oraz pliku README.md. Lokalny demo build URL-only
-uruchamia wyłącznie soft voting z pliku models/ensemble/voting_soft.joblib, a smoke-testy w
-praca/smoke-tests/case_5_7_*_ens.json         potwierdzają      jego   działanie   na   siedmiu
-klasyfikatorach z hiperparametrami GA.
-
-
-5.5. Wyniki modeli wyspecjalizowanych (e-mail, SMS)
-
-Modele wytrenowane na rozszerzonym zbiorze cech NLP (Phase 6) osiągają wysoką skuteczność
-klasyfikacji wiadomości:
-
-Typ wejścia Liczba cech Accuracy             F1
-
-
-
-
-
-Tabela 7. Wyniki modeli wyspecjalizowanych dla wiadomości e-mail i SMS.
-
-models/email_sms/ensemble_email.joblib        i jest logowana w konsoli serwera przy starcie:
-"Email ensemble loaded (65 features, 0.984... accuracy)". Wyższa skuteczność modelu e-mail
-wynika z dostępu do strukturalnych cech nagłówków (SPF, DKIM, domena nadawcy), które nie
-występują w SMS.
-
-Wartości z Tabeli 7 dotyczą pełnego repozytorium. Lokalny demo build URL-only nie ładuje
-modeli ensemble_email.joblib ani ensemble_sms.joblib, dlatego endpointy /predict/email,
-/predict/email/file    i /predict/sms nie są w nim zarejestrowane, a /health zwraca
-email_model_loaded: false oraz sms_model_loaded: false.
-
-
-
-5.6. Wyniki systemu wielowarstwowego
-
-System wielowarstwowy, wykorzystywany przez endpoint /predict/multi-paradigm, łączy
-wyniki ML ensemble, systemu regułowego i klasyfikatora bayesowskiego. Jego rolą nie jest
-wyłącznie podbicie dokładności, lecz zwiększenie wiarygodności decyzji w przypadkach
-trudnych. W trakcie testów obserwujemy następującą charakterystykę:
-
-   •   W próbkach łatwych (jednomyślność trzech warstw) końcowe prawdopodobieństwo jest
-       wysokie (>0,95) lub niskie (<0,05), a wskaźnik rozbieżności bliski zeru.
-   •   W próbkach trudnych (rozbieżność co najmniej dwóch warstw) flaga is_edge_case jest
-       ustawiana na true, a system zwraca wyjaśnienie sygnalizujące potrzebę ręcznej
-       weryfikacji.
-   •   Według metryk pełnego repozytorium (zgodnie z README.md) dokładność końcowa
-       agregatora na zbiorze testowym jest zbliżona do soft votingu (rząd 0,975), a precyzja w
-       klasie phishing rośnie kosztem niewielkiego spadku czułości przy domyślnych wagach
-       (ML    0,5;    Rules   0,3;    Bayes   0,2).       Lokalne   smoke-testy   w     praca/smoke-
-
-       tests/case_5_7_*_mp.json       potwierdzają działanie agregatora punktowo, ale pełna
-       ewaluacja na zbiorze testowym wymaga uruchomienia w pełnym repozytorium.
-
-
-
-
-
-5.7. Studium przypadków
-
-W tym podrozdziale omawiamy pięć przypadków obrazujących zachowanie systemu w różnych
-scenariuszach. Każdy z nich, poza wariantem SMS, został przetestowany na uruchomionym
-demonstratorze, a odpowiedzi API znajdują się w katalogu praca/smoke-tests/ jako pliki JSON.
-Studia przypadków dokumentują działanie systemu i są dobrym materiałem do prezentacji
-obrony, ponieważ pozwalają prześledzić proces decyzyjny od wejścia do werdyktu końcowego.
-
-5.7.1. Przypadek jednomyślny phishing
-
-Adres http://paypal-verify-account.tk/login?user=admin to klasyczny przykład masowego
-phishingu, który łączy kilka technik socjotechniki. Podszywa się pod znaną markę finansową
-(PayPal), używa domeny najwyższego poziomu .tk, a w ścieżce zawiera słowa verify, account i
-login. Każdy z tych elementów sam w sobie nie przesądza o phishingu, ale ich zestawienie jest
-
-typowe dla stron wyłudzających dane logowania.
-
-System reaguje natychmiast. Ensemble ML zwraca prawdopodobieństwo phishingu 92,04
-procent (wszystkie siedem klasyfikatorów zgodnie wskazuje phishing, disagreement score równy
-zero). System regułowy aktywuje siedem reguł z szesnastu: suspicious_tld (waga 0,25),
-urgent_keywords z dopasowaniem verify (waga 0,20), security_keywords z dopasowaniem
-
-account   (waga    0,15),   action_keywords        z   dopasowaniem   login   (waga    0,15),
-brand_impersonation z dopasowaniem paypal (waga 0,25), high_entropy (waga 0,15) oraz
-
-no_https (waga 0,15). Sumaryczna waga przekracza jedność, więc zostaje obcięta do 1,0.
-
-Klasyfikator bayesowski zwraca posterior 1,0 (silne dopasowanie do rozkładu klasy phishing).
-Agregator daje końcowy werdykt: PHISHING z prawdopodobieństwem 96,02 procent przy
-wysokiej pewności. Wszystkie trzy warstwy są zgodne, więc nie ma flagi przypadku granicznego.
-
-5.7.2. Przypadek jednomyślny legalny
-
-Adres https://www.bankofamerica.com/online-banking/sign-in/ to typowa strona logowania
-amerykańskiego banku. Spełnia kanon dobrego adresu: protokół HTTPS, znana domena z
-odpowiednim TLD .com, prefiks www, ścieżka opisowa i hierarchiczna. System regułowy odrzuca
-wszystkie 16 reguł, ponieważ żadne ze słów kluczowych phishingowych nie występuje w URL
-(sign-in ma myślnik, a lista słów reguły action_keywords obejmuje formy bez myślnika: login,
-
-
-signin, password, credential), nie ma podejrzanej TLD ani adresu IP, długość adresu jest
-
-poniżej stu znaków, a entropia jest umiarkowana. Sumaryczny wynik warstwy reguł wynosi
-zatem 0,0. Klasyfikator bayesowski - po treningu na zbiorze syntetycznym zawierającym próbki
-legalnych URL bankowych - zwraca posterior phishingu praktycznie zerowy. Ensemble ML
-zwraca średnie prawdopodobieństwo 0,0002 (siedem klasyfikatorów zgodnie wskazuje
-legitimate). Agregator wyciąga decyzję: LEGALNA z prawdopodobieństwem phishingu poniżej
-0,1 procent. Wszystkie trzy warstwy są zgodne, disagreement score wynosi zero. Ten przypadek
-pokazuje wartość rozbudowanego zbioru treningowego - w pierwszej wersji syntetycznej tej
-samej próbki nie reprezentowały realistycznych URL bankowych, więc ensemble ML błędnie
-klasyfikował adres jako phishing pomimo zerowego wyniku reguł.
-
-5.7.3. Próbka z adresem IP w prywatnym zakresie
-
-Adres http://192.168.0.1/secure-login/verify jest interesujący ze względu na prywatny
-zakres adresu IP. Dla systemu regułowego aktywują się: ip_address_host (waga 0,35),
-urgent_keywords (verify, waga 0,20), security_keywords (secure, waga 0,15), action_keywords
-
-(login, waga 0,15), high_entropy (waga 0,15) oraz no_https (waga 0,15). Suma wag wynosi
-1,15, więc po obcięciu wynik warstwy reguł to 1,0. Ensemble ML zwraca prawdopodobieństwo
-98,83 procent (siedem klasyfikatorów: rf=92,1, lr=100, mlp=100, dt=100, xgb=99,7, svm=100,
-nb=100). Klasyfikator bayesowski zwraca posterior 1,0. Agregator daje końcowy werdykt:
-PHISHING z prawdopodobieństwem 99,41 procent, disagreement score wynosi zero, brak flagi
-edge case. Mimo że IP pochodzi z prywatnego zakresu (192.168.0.0/16, klasa C dla sieci
-wewnętrznej), wszystkie warstwy zgodnie traktują go jak adres podejrzany - bo z zewnątrz nie
-ma sensownego powodu, aby pojawiał się w URL skierowanym do użytkownika końcowego.
-
-5.7.4. Phishing wykrywany głównie przez reguły
-
-Adres                               http://example-securityalert.tk/account/verify/your-
-
-password/now/login/credentials/   nie odwołuje się do żadnej popularnej marki, ale jego
-struktura jest mocno podejrzana. System regułowy aktywuje siedem pozycji: podejrzaną
-TLD .tk (waga 0,25), słowa pilności verify (0,20), słowa bezpieczeństwa security i account
-(0,15), słowa akcji login, password, credential (0,15), znaczną liczbę znaków specjalnych
-
-
-
-
-(0,15), głęboką ścieżkę o path_depth=6 (0,10) oraz brak HTTPS (0,15). Suma wag przekracza
-jedność, więc wynik warstwy reguł zostaje obcięty do 1,0.
-
-Inaczej wygląda zachowanie klasyfikatorów ML. Modele drzewiaste oraz Naive Bayes wskazują
-phishing z wysoką pewnością (DT i NB po 100%, XGBoost 99,5%, RF 63,6%, SVM 66,4%),
-natomiast klasyfikatory liniowe są zaskakująco zachowawcze: LR daje 0,0%, MLP 0,7%. Soft
-voting uśrednia te wartości do 61,46%, a wskaźnik rozbieżności zespołu ML wynosi 0,307.
-Mamy więc wyraźną niezgodę wewnątrz ML, choć nie przekracza ona progu edge case (0,7).
-
-Klasyfikator bayesowski zwraca posterior 1,0, a agregator z domyślnymi wagami (0,5; 0,3; 0,2)
-wyciąga końcową decyzję: PHISHING z prawdopodobieństwem 80,73 procent. Rozbieżność na
-poziomie trzech warstw decyzyjnych jest zerowa - wszystkie głosują phishing - ale niezgoda
-wewnątrz ML pokazuje, że adres jest dla modeli liniowych nietypowy. To dobry argument na
-rzecz utrzymania warstwy regułowej: kodowana ręcznie wiedza ekspercka działa tam, gdzie
-modele statystyczne nie mają reprezentatywnych przykładów w danych treningowych, czyli w
-sytuacjach typu zero-day.
-
-5.7.5. Próbka SMS
-
-Wiadomość "Twoja paczka czeka, dopłać 2,99 PLN za przewóz: http://kurier-pl.tk/pay-shipping"
-jest charakterystyczna dla polskiego rynku phishingowego z lat 2023-2025. Naśladuje komunikat
-firmy kurierskiej, podaje niską kwotę i kieruje użytkownika na domenę z podejrzaną TLD .tk.
-Aktualny demonstrator lokalny nie obsługuje pełnego endpointu SMS (faza 6 repozytorium z
-modelami SMS i NLP nie została wbudowana w demo build), ale w pełnym systemie z repo
-model SMS ekstrahuje 70 cech: długość, gęstość URL, słowa kluczowe pilności, wskaźniki
-literówek i znaki interpunkcyjne. Ze względu na ograniczenia demo build, przypadek SMS w tej
-pracy ilustrowany jest jedynie w warstwie tekstowej, bez uruchomionej infrastruktury.
-
-Każdy z opisanych przypadków, z wyjątkiem ostatniego, został przetestowany na lokalnym
-demonstratorze i wyniki są dostępne w plikach praca/smoke-tests/case_5_7_*.json (cztery
-pary plików: dla każdego studium odpowiedź endpointu /predict/multi-paradigm i
-/predict/ensemble).
-
-
-
-
-
-5.8. Ograniczenia
-
-Świadomie zidentyfikowane ograniczenia systemu w obecnej postaci:
-
-   1. Rozmiar zbiorów danych - PhishTank ogranicza liczbę próbek bez klucza API; UCI ML
-      Phishing Websites Data Set jest klasycznym, lecz starszym zestawem; Nazario corpus
-      zawiera próbki głównie anglojęzyczne.
-   2. Język - większość modeli NLP (spaCy en_core_web_sm) działa na języku angielskim;
-      analiza polskich wiadomości jest możliwa, lecz bez pełnej tokenizacji morfologicznej.
-   3. Concept drift - mimo temporalnego rozdziału zbiorów, w realnym wdrożeniu należy
-      okresowo retrenować modele (skrypt retrain_with_urls.py jest gotowy, lecz
-      harmonogram retreningu pozostaje decyzją operacyjną).
-   4. Brak OCR i analizy wizualnej - Faza 7 (obrazy, EasyOCR, hashing perceptualny,
-      podobieństwo wizualne marek) jest zaplanowana, lecz niezaimplementowana w obecnej
-      wersji.
-   5. Ograniczony frontend - aplikacja webowa obsługuje analizę pojedynczych adresów
-      URL, natomiast upload plików .eml, batch CSV i pełny responsywny layout mobilny
-      pozostają w fazie planowania.
-   6. Brak SHAP/LIME - interpretowalność klasyfikatorów ML jest obecnie pośrednia (przez
-      rozbieżności w zespole oraz aktywne reguły); pełna integracja narzędzi post-hoc takich
-      jak SHAP/LIME jest przedmiotem Fazy 9.
-   7. Kalibracja probabilistyczna - posteriory NB nie są skalibrowane; planowane jest
-      zastosowanie kalibracji izotonicznej lub sigmoidalnej.
-   8. Wagi w agregatorze - aktualne wartości 0,5 / 0,3 / 0,2 zostały dobrane heurystycznie;
-      w dalszych pracach warto zoptymalizować je względem zbioru walidacyjnego.
-
-
-
-
-
-6. Podsumowanie
-
-Cel tej pracy inżynierskiej brzmiał: zaprojektować, wykonać i ocenić zintegrowany system
-wykrywania phishingu, który łączy cztery podejścia analityczne (uczenie maszynowe, algorytmy
-ewolucyjne, system regułowy oraz probabilistyczny system ekspertowy). Cel ten został
-zrealizowany w pełnym zakresie sześciu z dziesięciu zaplanowanych faz projektu (Foundation &
-Data Pipeline, Core ML Pipeline, ML Ensemble Expansion, Genetic Algorithm Optimization,
-Alternative Detection Paradigms, Email & SMS Support).
-
-W wyniku pracy powstał system PhishGuard dostępny w publicznym repozytorium
-https://github.com/H4ck1nGPr13sT/phishguard.       System       obejmuje    moduły       Pythona
-odpowiedzialne za ekstrakcję cech, trening i predykcję, zestaw testów pytest, szesnaście reguł
-eksperckich w YAML, siedem klasyfikatorów ML w wariantach bazowych i zoptymalizowanych
-GA, cztery warianty zespołów (soft voting, hard voting, stacking, weighted voting), klasyfikator
-bayesowski, warstwę końcowej agregacji oraz REST API zbudowane na FastAPI.
-
-Najważniejsze      wyniki    praktyczne    (dane     pochodzą      bezpośrednio      z    plików
-models/optimized/*_metadata.json oraz README.md repozytorium):
-
-
-   •   najlepszy pojedynczy klasyfikator po optymalizacji GA to Logistic Regression z
-       F1=0,9749 (5-krotna walidacja krzyżowa), drugi - Random Forest z F1=0,9705, trzeci -
-       MLP z F1=0,9697;
-   •   średni F1-score siedmiu zoptymalizowanych klasyfikatorów wynosi 0,9624, co jest
-       zgodne z deklaracją w README.md ("avg F1 ~0.96");
-       zbiorze testowym URL (zgodnie z README.md); ważone głosowanie po dodatkowej
-       optymalizacji GA-04 podnosi ten wynik o około 0,3 pp;
-       testowym;
-       wrażliwe na logarytmiczną skalę swoich jedynych parametrów (var_smoothing, C);
-
-
-   •   agregator z wagami (ML=0,5; Rules=0,3; Bayes=0,2) poprawnie identyfikuje przypadki
-       rozbieżności (edge cases, próg 0,7) i zwraca interpretowalne wyjaśnienie decyzji wraz z
-       listą aktywnych reguł;
-   •   API zwraca odpowiedzi w czasie poniżej 500 ms dzięki jednorazowemu ładowaniu
-       modeli w mechanizmie lifespan FastAPI.
-
-Najważniejsza wartość pracy ma charakter inżynierski. Polega na tym, że cztery różne techniki -
-ML, reguły i Bayes - są ze sobą zestawione tak, że ich wyniki widać obok siebie, a nie jako jedną
-zagregowaną liczbę. Każda z nich ma własne kategorie błędów: ML jest wrażliwe na rozkład
-danych treningowych, system regułowy nie generalizuje poza zdefiniowane reguły, a klasyfikator
-bayesowski zakłada warunkową niezależność cech. Połączenie wszystkich trzech w warstwie
-agregacji, z jawnym pomiarem rozbieżności, daje nową informację diagnostyczną (klasę edge
-case), której nie wytwarza żadna z metod osobno.
-
-Po stronie liczb i obserwacji widać trzy rzeczy:
-
-   •   klasyczne algorytmy uczenia maszynowego w połączeniu z dobrze zaprojektowaną
-       inżynierią cech i optymalizacją ewolucyjną są w stanie skutecznie konkurować z
-       modelami głębokimi w problemie wykrywania phishingu;
-   •   transparentność systemu - poprzez wyjaśnienia, listę aktywnych reguł oraz wskaźniki
-       rozbieżności - nie wymaga rezygnacji ze skuteczności;
-   •   modularna architektura wielowarstwowa pozwala na stopniowy rozwój projektu (od MVP
-       w pierwszej fazie do pełnego systemu w fazie szóstej), z zachowaniem replikowalności
-       wyników i jakości kodu.
-
-Najważniejsze trudności projektowe
-
-Największe trudności miały trzy źródła. Pierwszym było pogodzenie wymagań różnych wersji
-bibliotek. Pakiet scikit-learn w wersji 1.4 i nowszych wprowadził ostrzeżenia o przyszłym
-usunięciu parametru penalty w LogisticRegression, a xgboost 2.0 zmienił domyślny sposób
-obsługi etykiet (z [0, 1] na typ int). Plik requirements.txt z minimalnymi wersjami okazał się
-niewystarczający, ponieważ niektóre zależności pośrednie, na przykład numpy, wprowadzały
-
-
-
-
-
-zmiany API łamiące starsze wersje innych pakietów. Rozwiązaniem było ograniczenie wersji i
-regularne uruchamianie odpowiednich testów po aktualizacjach.
-
-Drugą trudnością była optymalizacja algorytmem genetycznym dla XGBoost. Klasyfikator ten
-ma dziewięć istotnych hiperparametrów i przy populacji pięćdziesięciu osobników oraz
-trzydziestu generacjach przestrzeń przeszukiwań nie jest w pełni pokryta. Wyniki potrafią być
-niestabilne, czyli kolejne uruchomienia z innym ziarnem losowym dają rozbieżność F1 rzędu
-kilku setnych. Ostateczne hiperparametry XGBoost z pliku xgb_metadata.json należy więc
-traktować jako najlepszą znalezioną konfigurację w ramach przyjętego budżetu obliczeniowego,
-a nie jako gwarancję globalnego optimum. Dla klasyfikatorów o dużej liczbie hiperparametrów
-sensowne byłoby połączenie GA z optymalizacją bayesowską, na przykład wstępna eksploracja
-GA, a następnie dostrojenie przez Optuna.
-
-Trzecia trudność dotyczyła wag agregatora. Wartości ML 0,5, reguły 0,3 i Bayes 0,2 wydają się
-rozsądne, ale przy konkretnych próbkach mają realne konsekwencje. Jeżeli ML zwraca 0,45, a
-reguły 0,65, końcowy werdykt może znaleźć się blisko progu. Dla prywatnych adresów IP w
-intranecie reguły mogą fałszywie alarmować, podczas gdy ML pozostaje mniej stanowczy.
-Dobór wag nie jest więc tylko parametrem technicznym, ale elementem polityki bezpieczeństwa.
-Inne wartości wybierze zespół SOC w banku, a inne administrator pojedynczej firmy IT,
-ponieważ różne są koszty fałszywych alarmów i przeoczonych ataków.
-
-Projekt zrealizowano w założonym zakresie sześciu faz. Niezrealizowane pozostały OCR i
-analiza wizualna, frontend z batch CSV, eksplanowalność oparta na SHAP/LIME oraz
-rozbudowana dokumentacja API. Wszystkie te elementy są opisane w roadmapie jako dalszy
-rozwój.
-
-
-Propozycje dalszych prac
-
-Cztery fazy zaplanowane, lecz niezrealizowane w ramach pracy inżynierskiej, stanowią naturalne
-kierunki rozwoju:
-
-   1. Faza 7 - OCR i analiza wizualna: integracja EasyOCR do ekstrakcji tekstu z obrazów,
-       hashing perceptualny lub osadzenia CNN do wykrywania podszywania się pod marki,
-       łączenie analizy tekstowej i wizualnej w jednolitym scoringu.
-
-
-   2. Faza 8 - frontend webowy i przetwarzanie wsadowe: aplikacja w technologii
-      responsywnej (Vue.js lub React) z formularzami wklejania tekstu/URL, upload
-      plików .eml i obrazów, batch CSV oraz dashboardem postępu.
-   3. Faza 9 - eksplanowalność: integracja SHAP i LIME dla wszystkich klasyfikatorów,
-      wizualizacja porównań wielomodelowych, generowanie podsumowań w języku
-      naturalnym.
-   4. Faza 10 - dokumentacja i ewaluacja akademicka: analiza wpływu grup cech (ablation
-      study), generowanie eksportowalnych raportów (PDF/CSV), pełna dokumentacja API w
-      OpenAPI z interaktywnym interfejsem testowym.
-
-Dodatkowe kierunki     badawcze obejmują: zastosowanie reprezentacji wektorowych z
-transformatorów (RoBERTa, DistilBERT) jako alternatywnych cech tekstowych oraz
-porównanie z sieciami rekurencyjnymi typu LSTM [22], rozbudowę warstwy probabilistycznej o
-sieci bayesowskie z uczeniem struktury, wdrożenie aktywnego uczenia z pętlą zwrotną od
-użytkownika (human-in-the-loop) oraz badanie odporności systemu na ataki adwersaryjne. Dla
-pracy nad zgodnością z polskim prawem ochrony danych przydatne będą wytyczne UODO [32].
-
-Opracowany system pokazuje, że klasyczne modele ML, reguły eksperckie i prosty klasyfikator
-probabilistyczny można połączyć w jedno narzędzie analityczne. Najbardziej praktycznym
-efektem pracy jest możliwość porównania kilku niezależnych ocen tej samej próbki i
-sprawdzenia, które reguły doprowadziły do alarmu. Dalszy rozwój nie wymaga przebudowy całej
-architektury, ponieważ kolejne moduły można dodawać przyrostowo.
-
-
-
-
+# 5. Wyniki projektu
+
+Wszystkie wyniki URL pochodzą z jednego protokołu: wspólny odłożony zbiór testowy
+z artefaktu `cache/url_training_data.joblib` (200 próbek treningowych, 50 testowych,
+25/25, 30 cech), podział **losowy stratyfikowany** (`random_state=42`) — nie
+temporalny. Skrypt: `scripts/evaluate_url_models_honest.py`, raport:
+`reports/url_eval_honest.csv`. Mały zbiór testowy (50 próbek) oznacza, że różnice
+są orientacyjne i opisowe.
+
+## 5.1. Klasyfikatory bazowe i zoptymalizowane GA (wspólny test)
+
+Każdy klasyfikator oceniono na tym samym odłożonym teście. Kolumna „CV-fitness" to
+F1 z 5-krotnej walidacji krzyżowej najlepszego osobnika GA i jest inną wielkością
+niż wynik testowy; nie należy ich od siebie odejmować.
+
+| Klasyfikator | F1 baza (test) | F1 GA (test) | Zysk (test) | CV-fitness |
+|---|---|---|---|---|
+| Logistic Regression | 0,9200 | 0,9362 | +0,0162 | 0,9749 |
+| Random Forest | 0,9091 | 0,9259 | +0,0168 | 0,9705 |
+| MLP | 0,9167 | 0,9583 | +0,0417 | 0,9697 |
+| XGBoost | 0,9231 | 0,9259 | +0,0028 | 0,9623 |
+| SVM (RBF) | 0,8846 | 0,9020 | +0,0173 | 0,9502 |
+| Naive Bayes | 0,9020 | 0,9020 | +0,0000 | 0,9438 |
+| Decision Tree | 0,8980 | 0,9259 | +0,0280 | 0,9656 |
+
+Na wspólnym teście optymalizacja GA dała niewielką poprawę F1 (od +0,000 dla Naive
+Bayes do +0,042 dla MLP). Jest to wynik jednego losowego podziału; stabilności
+poprawy przy innych ziarnach nie badano, a koszt wyszukiwania (populacja 50,
+30 generacji) nie jest tu zestawiony z wielkością zysku.
+
+## 5.2. Zespoły klasyfikatorów (wspólny test)
+
+| Wariant | F1 (test) |
+|---|---|
+| Hard voting | 0,9200 |
+| Soft voting | 0,9231 |
+| Stacking | 0,9231 |
+| Najlepszy pojedynczy (MLP-GA) | 0,9583 |
+
+Na wspólnym zbiorze testowym zespoły osiągnęły F1 ≈ 0,92 i **nie przewyższyły**
+najlepszego pojedynczego modelu zoptymalizowanego GA (MLP, 0,958). W tym
+eksperymencie zespół nie uzyskał przewagi; wynik ten opisano zgodnie z pomiarem.
+
+## 5.3. Modele wyspecjalizowane (e-mail, SMS) — dane syntetyczne
+
+Trzy różne wielkości należy rozróżnić. Zapisane w modelach pole `test_accuracy=1,0`
+pochodzi z **syntetycznego odłożonego zbioru 20%** utworzonego przez skrypt
+treningowy (`scripts/train_email_sms_models.py`, podział 80/20). Niezależne
+5-krotne CV (`scripts/evaluate_email_sms_honest.py`) dało: e-mail acc 0,985 /
+F1 0,984, SMS acc 1,0 / F1 1,0. Ewaluacja na pełnym zbiorze daje 1,0 (ten sam
+zbiór, na którym trenowano) i jest wyłącznie kontrolą, nie miarą generalizacji.
+
+| Typ | 5-fold CV acc | 5-fold CV F1 |
+|---|---|---|
+| E-mail (65 cech) | 0,985 | 0,984 |
+| SMS (70 cech) | 1,000 | 1,000 |
+
+Istotne ograniczenie zakresu: dane są syntetyczne i generowane z 20 szablonów na
+klasę dla każdego typu (`scripts/create_email_sms_dataset.py`). W walidacji
+krzyżowej większość wiadomości testowych ma swój szablon obecny w zbiorze
+treningowym, dlatego CV mierzy przede wszystkim rozpoznawanie **wariantów znanych
+szablonów**, a nie nowych kampanii ani rzeczywistych wiadomości. Wynik SMS równy
+1,0 wynika z trywialnej separowalności tych danych. Twierdzenie o skuteczności
+poza danymi syntetycznymi wymagałoby podziału grupowego według szablonu albo
+niezależnego, ręcznie oznaczonego zbioru rzeczywistych wiadomości.
+
+## 5.4. System wielowarstwowy — miara rozbieżności, wkład warstw, czas
+
+**Miara rozbieżności.** Wskaźnik rozbieżności to znormalizowana entropia Shannona
+rozkładu głosów, dzielona przez maksymalną entropię binarną log2(2) = 1 bit
+(`src/models/disagreement.py`, `src/paradigms/aggregation/disagreement.py`;
+17 testów jednostkowych). Dla trzech warstw każda niejednomyślność daje wynik
+≈ 0,918, a jednomyślność 0. Dla siedmiu klasyfikatorów najbardziej wyrównany
+podział 4/3 daje maksimum ≈ 0,985. Próg oznaczania przypadku granicznego ustawiono
+na 0,7: dla warstw oznacza to „paradygmaty nie są jednomyślne", a dla zespołu ML —
+„co najmniej dwa z siedmiu klasyfikatorów są odmiennego zdania". Flaga jest
+wskaźnikiem niezgody głosów, a nie dowodem, że dana decyzja jest błędna.
+
+**Wkład warstw (próba ilustracyjna z nakładaniem danych).** Na zbiorze 50
+etykietowanych adresów (40 phishingowych z OpenPhish, 10 znanych legalnych) sam
+zespół ML osiągnął 48/50 poprawnych decyzji, a pełny agregator trójwarstwowy 46/50.
+Agregator zmienił dwie decyzje względem samego ML i obie okazały się błędne. Jest
+to jednak **próba ilustracyjna, nie niezależna ocena skuteczności**: pierwsze 40
+adresów pochodzi z tego samego pliku OpenPhish, z którego losowano dane treningowe
+URL — po odtworzeniu losowania 13 z 40 trafia do zbioru treningowego, a 4 do
+testowego. Dla rzetelnej oceny wkładu warstw potrzebna byłaby niezależna próba
+(z deduplikacją) z pełnym raportem zmian decyzji oraz błędów FN/FP. W badanym
+zakresie integracja trzech warstw nie poprawiła decyzji względem samego ML.
+
+**Czas odpowiedzi.** Pomiar `/predict/multi-paradigm` (50 żądań, model rozgrzany,
+cechy leksykalne, pomiar lokalny in-process przez TestClient): mediana ≈ 15 ms,
+95. percentyl ≈ 16 ms — poniżej wymaganych 500 ms. Zakres twierdzenia ograniczono
+do pojedynczego żądania po rozgrzaniu; nie obejmuje ono opóźnienia klient–serwer
+ani obciążenia równoległego.
+
+
+
+# 6. Podsumowanie
+
+Zaprojektowano i wykonano system PhishGuard łączący ekstrakcję cech, siedem
+klasyfikatorów uczenia maszynowego, optymalizację hiperparametrów algorytmem
+genetycznym, system regułowy, klasyfikator bayesowski oraz warstwę agregacji z
+interfejsem API i demonstratorem. Wkład własny obejmuje integrację komponentów,
+dobór cech i mechanizm wykrywania rozbieżności między warstwami.
+
+Wyniki należy odczytywać w zakresie przeprowadzonych pomiarów. Na wspólnym,
+losowo podzielonym zbiorze testowym 50 adresów URL optymalizacja GA dała niewielką
+poprawę F1 (do +0,042 dla MLP), a zespoły klasyfikatorów nie przewyższyły
+najlepszego pojedynczego modelu zoptymalizowanego GA. Wyniki e-mail i SMS uzyskano
+na danych syntetycznych generowanych z ograniczonej liczby szablonów i nie mierzą
+one skuteczności na rzeczywistych wiadomościach. Na ilustracyjnej próbie 50 adresów
+agregator trójwarstwowy uzyskał 46/50 poprawnych decyzji wobec 48/50 dla samego
+zespołu ML; nie wykazano wzrostu skuteczności wynikającego z integracji warstw.
+Naprawiono natomiast główny mechanizm pracy: po poprawieniu normalizacji entropii
+flaga rozbieżności jest osiągalna i poprawnie sygnalizuje niezgodę głosów.
+Czas odpowiedzi pojedynczego żądania po rozgrzaniu modelu mieści się poniżej 500 ms
+w pomiarze lokalnym.
+
+System pokazuje wyniki trzech warstw oraz aktywne reguły, co zwiększa
+interpretowalność decyzji. Jest to cecha interfejsu, odrębna od zmierzonej
+skuteczności klasyfikacji. Dalsze prace, które pozwoliłyby rozszerzyć wnioski, to
+w szczególności: ewaluacja na niezależnych, rzeczywistych zbiorach wiadomości i
+adresów, podział grupowy danych syntetycznych według szablonu, zestawienie kosztu
+wyszukiwania GA z uzyskanym zyskiem oraz powtórzenia optymalizacji dla oceny jej
+stabilności. Zakres opcjonalny obejmuje porównanie z modelem głębokim oraz
+rozszerzenia OCR i wyjaśnień SHAP/LIME. Praca nie obejmowała bezpośredniego
+porównania z modelami głębokimi i nie formułuje wniosku o przewadze nad nimi.
+
+
+# 7. Bibliografia
 
 7. Bibliografia
   1. APWG (Anti-Phishing Working Group), Phishing Activity Trends Report 4Q2025, 2026,
@@ -2527,11 +1746,7 @@ Listingi
 
 
 
-# Załącznik A — rysunki (rendery stron oryginału)
-
-> Ekstrakcja tekstu nie zawiera grafiki, więc rysunki dołączono jako
-> rendery odpowiednich stron PDF. Przy finalnym składzie zastąp je
-> właściwymi, przyciętymi obrazami.
+# Załącznik A — rysunki
 
 ![Rysunek A1. Architektura logiczna systemu PhishGuard (przycięty diagram, s. 25).](/Users/lukaszdrazek/Inzynierka/reports/figury2/diagram_architektura.png)
 
@@ -2551,7 +1766,7 @@ Listingi
 
 
 
-# Załącznik B — wybrane listingi kodu (czyste, z repozytorium)
+# Załącznik B — wybrane listingi kodu
 
 **Miara rozbieżności (poprawiona normalizacja)** (`src/paradigms/aggregation/disagreement.py`):
 
