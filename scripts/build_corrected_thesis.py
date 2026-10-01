@@ -336,8 +336,11 @@ def _apply_structure(path):
                     r.font.size = Pt(10); r.font.bold = True
         except KeyError:
             pass
-    first = d.paragraphs[0]
-    toc_p = first.insert_paragraph_before("Spis treści")
+    # Insert the TOC AFTER the title page — before the first "1. Wstęp" heading,
+    # so the order is: title page, Spis treści, chapters.
+    anchor = next((p for p in d.paragraphs
+                   if re.match(r"^1\.\s+Wstęp", p.text.strip())), d.paragraphs[0])
+    toc_p = anchor.insert_paragraph_before("Spis treści")
     toc_p.style = d.styles["Heading 1"]
     toc_field_p = toc_p.insert_paragraph_before("")
     toc_p._p.addnext(toc_field_p._p)
